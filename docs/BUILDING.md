@@ -74,9 +74,9 @@ python tools/package-models.py --out ./packages
 
 Downloads the Moonshine streaming weights and the Silero VAD model, caches them, and writes:
 
+- `pluto-voice-moonshine-tiny-en.zip`
 - `pluto-voice-moonshine-small-en.zip` (recommended)
 - `pluto-voice-moonshine-medium-en.zip`
-- `pluto-voice-moonshine-tiny-en.zip`
 
 Options: `--models tiny,small,medium` to pick some, `--cache DIR` for the download cache.
 
