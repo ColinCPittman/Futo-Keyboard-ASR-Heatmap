@@ -12,17 +12,17 @@ I made Pluto to address a issues I had with FUTO Keyboard:
 
 As I kept using Pluto with Moonshine, I found that it had drawbacks of its own, such as its tendency to add punctuation whenever you pause too long during dictation. This often turned the output into a series of sentence fragments. After much iterating, the **Smart Corrections** feature was the result. It addresses those drawbacks and adds features such as voice commands and emoji recognition. That foundation let me expand Smart Corrections to typing as well. All of it is modular and customizable.
 
+
+
+## Voice and Typing Features
+
+Words appear while you speak, for as long as you speak, with nothing sent anywhere. Moonshot enables more efficient, responsive, and adaptable voice input while remaining completely local and private. The optional punctuation and Smart corrections models enable Pluto to do a second pass to improve dictation errors. Each extra, from voice commands to emoji by name, has its own toggle, its own editable list, and there are sensitive sliders for them all. If enabled, at most it only swaps in words that sound alike or drop words that you don't want to be captured, it never rephrases you.
+
 <img src="docs/assets/readme-corrections.png" alt="What the voice model wrote and what Pluto types, for each optional fix, each with its own switch" width="100%">
 
 <img src="docs/assets/readme-screens-1.png" alt="Voice typing, the typing fix chip, the tap heatmap, emoji by name" width="100%">
 
-## Talk
-
-Words appear while you speak, for as long as you speak, with nothing sent anywhere. Voice models sometimes mishear a word or chop a sentence up at a pause. Add the optional punctuation and Smart corrections models and Pluto puts back what you meant. It only swaps in words that sound alike and never rephrases you. Each extra, from voice commands to emoji by name, has its own switch and its own editable list.
-
-## Type
-
-Turn on Smart corrections for typing and Pluto catches typos that are real words, the ones a spell checker can't see, once the sentence makes them obvious. Every fix shows up in a chip above the keyboard, and one tap undoes it. Underneath, a heatmap learns where your thumb actually lands and quietly moves the keys to meet it.
+Smart corrections also word
 
 <img src="docs/assets/readme-screens-2.png" alt="Smart corrections settings, voice commands, the list of typing fixes with mist to must highlighted, typing settings" width="100%">
 
