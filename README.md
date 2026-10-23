@@ -32,8 +32,8 @@ Turn on Smart corrections for typing and Pluto catches typos that are real words
 | | |
 |:-:|---|
 | **1** | **Get the app.** In [Obtainium](https://github.com/ImranR98/Obtainium), *Add App* → `https://github.com/ColinCPittman/Futo-Keyboard-ASR-Heatmap`. Or download the `.apk` from the [latest release](https://github.com/ColinCPittman/Futo-Keyboard-ASR-Heatmap/releases/latest). Android 7+, 64-bit. It installs next to FUTO Keyboard. |
-| **2** | **Switch keyboards.** Open Pluto and follow the setup. Coming from FUTO? Export your configuration there and import it here (*Miscellaneous*, both sides). |
-| **3** | **Add voice.** From the same release, download `pluto-voice-moonshine-small-en.zip`, plus `pluto-punctuation-en.zip` and `pluto-smart-corrections-en.zip` for the cleanup. Don't unzip; import under *Languages & Models*. [All models](docs/MODELS.md) |
+| **2** | **Switch keyboards.** Open Pluto and follow the setup. If you're coming from FUTO you can export your configuration there and import it here. |
+| **3** | **Add voice.** From the same release, download `pluto-voice-moonshine-small-en.zip`, plus `pluto-punctuation-en.zip` and `pluto-smart-corrections-en.zip` for the cleanup. Don't unzip; import under **Languages & Models** settings menu. [All models](docs/MODELS.md) The **Languages & Models** screen also links you to the download page for the models, if you would rather do it through the app.|
 
 ## Privacy
 
@@ -41,7 +41,7 @@ Turn on Smart corrections for typing and Pluto catches typos that are real words
 - Everything is stored on your phone: your settings, the words it learns, your personal dictionary, and any model files you import.
 - The adaptive typing heatmap saves only per-key statistics (roughly "taps on the letter E tend to land a bit to the left"), never the words you type. You can view it or reset it in settings.
 - Voice input is processed on your phone. The voice and correction models are only loaded when you use voice input and are unloaded again within a few minutes.
-- There is one exception you have to switch on yourself: **Save dictations for tuning**, in the developer settings, keeps your last 200 dictations in a file on your phone so you can study them on a computer. It is off unless you turn it on, and turning it off deletes them. It is meant for tuning Smart corrections: if you fork Pluto to improve them, it gives you real examples to test against.
+- There is one exception you have to switch on yourself: **Save dictations for tuning**, in the developer settings, keeps your last 200 dictations in a file on your phone so you can study them on a computer. It is off unless you turn it on, and turning it off deletes them. It is meant for tuning Smart Corrections. If you want to optimize Smart Corrections' behavior, it gives you real examples to test against.
 - Pluto is not available in an app store, so there is no store account involved either.
 
 ## Report a problem or suggest a feature
