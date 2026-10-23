@@ -2,6 +2,16 @@
 
 <p align="center"><b><a href="https://github.com/ColinCPittman/Futo-Keyboard-ASR-Heatmap/releases/latest">Download the APK</a></b> &nbsp;·&nbsp; <a href="#install">Install with Obtainium</a> &nbsp;·&nbsp; Android 7+ &nbsp;·&nbsp; no internet permission &nbsp;·&nbsp; built on <a href="https://keyboard.futo.tech/">FUTO Keyboard</a></p>
 
+Pluto Keyboard is a private, offline keyboard for Android with voice typing that works without sending a single word to the cloud. It learns how you type, shows your words as you speak them, and tidies up the transcript afterwards. It is built on top of [FUTO Keyboard](https://keyboard.futo.tech/), and the app has no internet permission at all, so Android won't let it connect to the internet.
+
+I made Pluto to address a issues I had with FUTO Keyboard:
+
+- I wanted a keyboard that learns my taps and builds a **typing heatmap** for correcting accidentally typing the wrong letters, when typing fast, I kept hitting letters next to the ones I meant. I liked this feature from SwiftKey and missed it when I switched to FUTO, so Pluto keyboard now has a version of that. 
+
+- I also found that FUTO’s Whisper models often missed the technical words I use for work. A larger Whisper distillation understood niche words better, but it came with a processing delay after longer recordings that quickly became tiresome. I knew that streaming models like Moonshine could address this, but FUTO didn’t support them, so now Pluto **supports Moonshine**.
+
+As I kept using Pluto with Moonshine, I found that it had drawbacks of its own, such as its tendency to add punctuation whenever you pause too long during dictation. This often turned the output into a series of sentence fragments. After much iterating, the **Smart Corrections** feature was the result. It addresses those drawbacks and adds features such as voice commands and emoji recognition. That foundation let me expand Smart Corrections to typing as well. All of it is modular and customizable.
+
 <img src="docs/assets/readme-corrections.png" alt="What the voice model wrote and what Pluto types, for each optional fix, each with its own switch" width="100%">
 
 <img src="docs/assets/readme-screens-1.png" alt="Voice typing, the typing fix chip, the tap heatmap, emoji by name" width="100%">
@@ -16,13 +26,6 @@ Turn on Smart corrections for typing and Pluto catches typos that are real words
 
 <img src="docs/assets/readme-screens-2.png" alt="Smart corrections settings, voice commands, the list of typing fixes with mist to must highlighted, typing settings" width="100%">
 
-## Why I built it
-
-I made Pluto for a couple of reasons. First, I wanted a keyboard that learns my taps and builds a typing heatmap. I liked this about SwiftKey and missed it when I switched to FUTO (when typing fast, I kept hitting the letter next to the one I meant).
-
-I also found that FUTO's Whisper models often missed the technical words I use for work. A larger Whisper distillation understood niche words better, but it came with a processing delay after longer recordings that quickly became tiresome. I knew that streaming models like Moonshine could address this, but FUTO didn't support them, so now Pluto does.
-
-As I kept using Pluto with Moonshine, I found that it had drawbacks of its own, such as its tendency to add punctuation whenever you pause too long during dictation. This often turned the output into a series of sentence fragments. Many rounds of trying to fix this led to Smart Corrections, which addresses those drawbacks and adds features such as voice commands and emoji recognition. That foundation let me expand Smart Corrections to typing as well.
 
 ## Install
 
@@ -32,15 +35,27 @@ As I kept using Pluto with Moonshine, I found that it had drawbacks of its own, 
 | **2** | **Switch keyboards.** Open Pluto and follow the setup. Coming from FUTO? Export your configuration there and import it here (*Miscellaneous*, both sides). |
 | **3** | **Add voice.** From the same release, download `pluto-voice-moonshine-small-en.zip`, plus `pluto-punctuation-en.zip` and `pluto-smart-corrections-en.zip` for the cleanup. Don't unzip; import under *Languages & Models*. [All models](docs/MODELS.md) |
 
-<details>
-<summary><b>Privacy and bugs</b></summary>
-<br>
+## Privacy
 
-**Privacy.** No internet permission, so Android blocks every connection. The heatmap stores per-key numbers, never words. The only thing that saves dictations is a developer setting that is off by default.
+- Pluto has **no internet permission**. Android itself blocks it from connecting to anything.
+- Everything is stored on your phone: your settings, the words it learns, your personal dictionary, and any model files you import.
+- The adaptive typing heatmap saves only per-key statistics (roughly "taps on the letter E tend to land a bit to the left"), never the words you type. You can view it or reset it in settings.
+- Voice input is processed on your phone. The voice and correction models are only loaded when you use voice input and are unloaded again within a few minutes.
+- There is one exception you have to switch on yourself: **Save dictations for tuning**, in the developer settings, keeps your last 200 dictations in a file on your phone so you can study them on a computer. It is off unless you turn it on, and turning it off deletes them. It is meant for tuning Smart corrections: if you fork Pluto to improve them, it gives you real examples to test against.
+- Pluto is not available in an app store, so there is no store account involved either.
 
-**Bugs.** Tested mostly on one phone. [Open an issue](https://github.com/ColinCPittman/Futo-Keyboard-ASR-Heatmap/issues) here, not with FUTO.
+## Report a problem or suggest a feature
 
-</details>
+Pluto is a personal project that I built for myself and am sharing in case it's useful to others. I'm happy with it, but it hasn't been widely tested yet, so you may run into rough edges. If you find a bug or have an idea, please open an issue on GitHub: <https://github.com/ColinCPittman/Futo-Keyboard-ASR-Heatmap/issues>. I'll do my best to address it.
+
+The issue form will ask for the following, and it all helps a lot:
+
+- Your phone model and Android version.
+- The Pluto Keyboard version (shown in the app's settings).
+- What happened, what you expected, and the steps to make it happen again.
+- Which features you have on: which voice model, punctuation fix, Smart corrections, adaptive typing heatmap.
+
+Please do not include passwords or private text in screenshots or recordings.
 
 ## Credits and license
 
