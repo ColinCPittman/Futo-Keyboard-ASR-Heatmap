@@ -96,8 +96,6 @@
     <string name="voice_input_settings_backend_system_hint">Choose which app the microphone button uses. Pluto\'s built-in voice typing works offline, but other apps may not.</string>
     <string name="voice_input_settings_open_android_keyboards">Open Android keyboard settings</string>
     <string name="voice_input_settings_open_android_keyboards_subtitle">Turn on other voice typing apps, such as Google voice typing</string>
-
-    <!-- Developer settings: Save dictations for tuning -->
     <string name="voice_input_cancel_discard">Cancel</string>
 
     <!-- Smart corrections for typing (Text prediction setting, strip chip, review list) -->

@@ -103,7 +103,7 @@ object VoiceInputEngines {
                 ?.let { Stage(STAGE_PUNCTUATION, it) },
             ContextModels.processorFor(context, locale, personal, leftContext)?.let { Stage(STAGE_CONTEXT, it, originalSegments = true) },
         )
-        // Developer setting "Save dictations for tuning" keeps each step's output (DictationRecorder)
+        // a private tuning hook (DictationRecorder does nothing in public builds)
         if (DictationRecorder.isEnabled(context)) {
             return TranscriptPostProcessor { raw, segments ->
                 val outputs = ArrayList<Pair<String, String>>()

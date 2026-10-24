@@ -18,7 +18,7 @@ import java.util.zip.ZipOutputStream
 
 /**
  * Export -> import of the parts of a settings backup that Pluto adds, meaning its DataStore settings
- * (voice engine, punctuation, Smart corrections switches and lists, Save dictations for tuning),
+ * (voice engine, punctuation, and Smart corrections switches and lists),
  * the typing heatmap and the hidden learned words. Entries are written and read the way
  * [SettingsExporter] does it.
  */

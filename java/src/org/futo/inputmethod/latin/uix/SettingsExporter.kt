@@ -193,7 +193,7 @@ object SettingsExporter {
 
     /**
      * The DataStore settings as stored in a backup. This holds all of Pluto's own settings (voice
-     * engine, punctuation, every Smart corrections switch and list, Save dictations for tuning).
+     * engine, punctuation, and every Smart corrections switch and list).
      */
     internal suspend fun encodeDatastore(prefs: Preferences): ByteArray {
         val array = ByteArrayOutputStream()
