@@ -18,7 +18,7 @@ import java.io.File
 import java.util.Locale
 
 /**
- * Pluto: don't learn words that look like passwords or keys ([SensitiveWords]). Default on.
+ * Pluto doesn't learn words that look like passwords or keys ([SensitiveWords]). Default on.
  * Checked in GeneralIME.addToHistory, the one place typed words reach the learned words.
  */
 val PROTECT_PASSWORD_LIKE_WORDS = SettingsKey(
@@ -30,7 +30,7 @@ val PROTECT_PASSWORD_LIKE_WORDS = SettingsKey(
 private const val PERSONAL_DICTIONARY_FREQUENCY = 250
 
 /**
- * Android glue for Pluto's dictionary tools: reads the keyboard's learned words (user history
+ * Android glue for Pluto's dictionary tools. It reads the keyboard's learned words (user history
  * dictionaries), checks them against the main dictionaries and the Android personal dictionary,
  * and writes to the personal dictionary only when asked.
  */
@@ -48,7 +48,7 @@ object LearnedWords {
         }
     }
 
-    /** All words the keyboard has learned (not just seen once) for [locales]. Slow: call off the main thread. */
+    /** All words the keyboard has learned (not just seen once) for [locales]. Slow, so call off the main thread. */
     fun load(context: Context, locales: List<Locale>): List<LearnedWord> {
         val out = ArrayList<LearnedWord>()
         for (locale in locales) {
@@ -64,7 +64,7 @@ object LearnedWords {
         return out
     }
 
-    /** Builds the "Copy learned words" review list. Slow: call off the main thread. */
+    /** Builds the "Copy learned words" review list. Slow, so call off the main thread. */
     suspend fun copyCandidates(context: Context): CopyCandidates {
         val locales = localesWithLearnedWords(context)
         val learned = load(context, locales)
@@ -118,7 +118,7 @@ object LearnedWords {
 
     /**
      * Removes [word] from the keyboard's learned words for its language, so it stops appearing as a
-     * typing suggestion. Doesn't add it to the Word Blacklist: the keyboard may learn it again if
+     * typing suggestion. Doesn't add it to the Word Blacklist, so the keyboard may learn it again if
      * the user picks it again.
      */
     fun forget(context: Context, word: LearnedWord) {

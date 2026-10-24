@@ -15,7 +15,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** The user's editable voice command list: storage format and use by the command rules. */
+/** The user's editable voice command list, covering storage format and use by the command rules. */
 class VoiceCommandsTest {
     @Test
     fun blankMeansBuiltIn() {
@@ -52,7 +52,7 @@ class VoiceCommandsTest {
         val own = listOf(CorrectionPhrase("swap that"), CorrectionPhrase("I mean", enabled = false))
         assertEquals(own, CorrectionPhrases.parse(CorrectionPhrases.serialize(own)))
         val markers = CorrectionPhrases.markers(CorrectionPhrases.enabledPhrases(own, builtIn = false))
-        // the user's own phrase needs a pause; two words may start a sentence
+        // the user's own phrase needs a pause, but two words may start a sentence
         val swap = markers.single()
         assertTrue(swap.needsPause && swap.atSentenceStart)
         val text = "Book a table for four, swap that five."
@@ -121,11 +121,11 @@ class VoiceCommandsTest {
         assertEquals("Thanks for coming,\nSee you soon.", applyCommands(nl.joinToString(" "), nl))
         // a hyphenated word that only contains a command word is not a command
         assertEquals("It was a period-appropriate dress.", applyCommands("It was a period-appropriate dress."))
-        // the same dictation, unhyphenated, as Moonshine segments it: the clause after the
+        // the same dictation, unhyphenated, as Moonshine segments it, so the clause after the
         // closing quote goes on lowercase
         val segs = listOf("He called himself,", "Open quote.", "X-ray", "Close quote.", "For some reason,")
         assertEquals("He called himself \"X-ray\" for some reason,", applyCommands(segs.joinToString(" "), segs, lowercaseFor))
-        // a new sentence after the closing quote keeps its capital; the ASR's period goes inside
+        // a new sentence after the closing quote keeps its capital, and the ASR's period goes inside
         assertEquals("She said \"I'm on my way.\" Then she left.",
             applyCommands("She said open quote I'm on my way close quote. Then she left."))
     }
@@ -135,7 +135,7 @@ class VoiceCommandsTest {
         // "new line" used as words is not a command
         val line = "I was waiting in line but then a new line formed and started moving faster."
         assertEquals(line, applyCommands(line))
-        // a filler inside spoken quotes stays: commands run first, then fillers skip quoted words
+        // a filler inside spoken quotes stays because commands run first, then fillers skip quoted words
         val quoted = applyCommands("And then she said. Open quotes. Um, what are you doing? Close quotes.")
         assertEquals("And then she said \"Um, what are you doing?\"", quoted)
         assertTrue(SpokenEdits.fillerGroups(SpokenEdits.Words(quoted)).isEmpty())
@@ -145,10 +145,10 @@ class VoiceCommandsTest {
 
     @Test
     fun quotedSpeechCommands() {
-        // no pauses: quote commands are unmistakable
+        // no pauses, and quote commands are unmistakable
         assertEquals("and I was like \"Um what you doing\"",
             applyCommands("and I was like open quote um what you doing close quote"))
-        // "close quote question mark": the question mark goes inside
+        // "close quote question mark" puts the question mark inside
         assertEquals("and I was like \"Um what are you doing?\"",
             applyCommands("and I was like open quote um what are you doing close quote question mark"))
         // "um comma" with a pause after "comma"
@@ -186,7 +186,7 @@ class VoiceCommandsTest {
             "She said no to the offer.", "He said hi to everyone.", "She said yes.")) {
             assertEquals(s, applyQuotes(s))
         }
-        // certain (no LM vote): a filler first, or a pause after "said" and then a question or "no,"
+        // certain (no LM vote) when there is a filler first, or a pause after "said" and then a question or "no,"
         fun certain(s: String) = SpokenEdits.quoteGroups(SpokenEdits.Words(s)).map { it.certain }
         assertEquals(listOf(true), certain("She goes, what are you doing here?"))
         assertEquals(listOf(true), certain("So I said, no, I can't make it."))
@@ -217,7 +217,7 @@ class VoiceCommandsTest {
         )) assertTrue(s, fillers(s).isEmpty())
     }
 
-    /** "make it" is a self-correction only between numbers; the new quote phrases need actual speech. */
+    /** "make it" is a self-correction only between numbers, and the new quote phrases need actual speech. */
     @Test
     fun numberAndSpeechOnlyPhrases() {
         fun corrections(s: String) = SpokenEdits.selfCorrectionGroups(SpokenEdits.Words(s), emptySet())
@@ -233,6 +233,9 @@ class VoiceCommandsTest {
     @Test
     fun customFillers() {
         assertEquals(FillerWords.DEFAULTS, FillerWords.enabledPhrases(FillerWords.parse("")))
+        // "you know" is not built in, so it stays unless you add it
+        val builtIn = FillerWords.fillers(FillerWords.DEFAULTS)
+        assertTrue(SpokenEdits.fillerGroups(SpokenEdits.Words("I was, you know, thinking about it."), builtIn).isEmpty())
         val entries = FillerWords.parse("um\t0\nyou know\n")
         val fillers = FillerWords.fillers(FillerWords.enabledPhrases(entries))
         val text = "I was, you know, thinking about it."

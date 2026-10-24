@@ -56,7 +56,7 @@ K = 6
 def build(lex: Lexicon) -> dict[str, dict[str, float]]:
     """word -> {candidate: score} (all candidates, not yet cut to K)"""
     # index vocabulary pronunciations by (length, position, pronunciation with that phoneme masked)
-    # (entries keep their position in lex.by_len: Lexicon.candidates() scans that list, and
+    # (entries keep their position in lex.by_len, because Lexicon.candidates() scans that list and
     # the scan order decides the order of equal scores)
     masked: dict[tuple, list[tuple[str, tuple, int]]] = {}
     for n, entries in lex.by_len.items():
@@ -94,7 +94,7 @@ def build(lex: Lexicon) -> dict[str, dict[str, float]]:
 
 
 def ranked(scores: dict[str, tuple]) -> list[str]:
-    # Lexicon.candidates(): sorted(out, key=-score) over insertion (= scan) order
+    # same as Lexicon.candidates(), which does sorted(out, key=-score) over insertion (= scan) order
     return sorted(scores, key=lambda c: (-scores[c][0], scores[c][1]))[:K]
 
 
@@ -157,7 +157,7 @@ BOUNDARY_K = 4
 BOUNDARY_MIN_F = 80
 # ... and the one word at least this common ("awhile" is 73)
 BOUNDARY_MIN_F_WORD = 60
-# never parts of a split: suffix-like or filler "words"
+# never parts of a split (suffix-like or filler "words")
 BOUNDARY_BAD_PARTS = {"er", "s", "ed", "ing", "ly", "es", "y", "um", "uh", "eh", "ah", "oh", "ha", "hm", "mm",
                       "teen", "ty"}
 BOUNDARY_BAD_WORDS = {"cannot"}
@@ -165,14 +165,14 @@ NUMBER_WORDS = {"zero", "one", "two", "three", "four", "five", "six", "seven", "
                 "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen",
                 "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety", "hundred",
                 "thousand", "million", "billion"}
-# two-word <-> two-word pairs that sound the same (the boundary moves); each is checked against CMUdict
+# two-word <-> two-word pairs that sound the same (the boundary moves), and each is checked against CMUdict
 BOUNDARY_SEED_2TO2 = [("ice cream", "i scream"), ("a nice", "an ice"), ("a name", "an aim"),
                       ("a notion", "an ocean")]
-# case: a form must be at least this common, and this much more common than the other case
+# case. A form must be at least this common, and this much more common than the other case
 CASE_MIN_F = 40
 CASE_MARGIN = 25
 LOWER_MIN_F = 50
-# lowercase-dominant in the word list but often names, months, ...: never lowercased
+# lowercase-dominant in the word list but often names, months, ..., so never lowercased
 LOWER_EXCEPTIONS = {"may", "will", "bill", "mark", "rose", "frank", "grace", "hope", "joy", "faith", "pat",
                     "sue", "jack", "art", "bob", "ray", "dawn", "summer", "autumn", "june", "april", "august",
                     "mike", "jay", "jean", "max", "drew", "chase", "rich", "victor", "earl", "lily", "ivy",
@@ -225,7 +225,7 @@ def build_boundary(lex: Lexicon, aosp) -> dict[str, list[str]]:
         out = set()
         for i in range(1, len(W)):
             out.add((W[:i], W[i:]))
-            # doubled letter: the char at the junction is written twice in the two words
+            # doubled letter, where the char at the junction is written twice in the two words
             out.add((W[:i] + W[i - 1], W[i:]))
             out.add((W[:i], W[i - 1:]))
         return out
@@ -299,7 +299,7 @@ def main():
     table = build(lex)
     print(f"built in {time.time() - t0:.0f} s")
     # rescore.py's own (slow) implementation must find the same candidates with the same
-    # scores; only the order of equal scores may differ (Python's set order is random)
+    # scores, but only the order of equal scores may differ (Python's set order is random)
     rnd = random.Random(1)
     words = rnd.sample(sorted(lex.pron), args.check) + ["bulls", "meat", "flower", "whether", "our", "jim"]
     bad = ties = 0

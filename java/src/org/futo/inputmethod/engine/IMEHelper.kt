@@ -68,7 +68,7 @@ class IMEHelper(
         latinIME.uixManager.triggerActionInternalFromIme(actionId, alt)
     }
 
-    /** Pluto: tells the user a password-like word was not learned; [rememberAnyway] learns it. */
+    /** Pluto: tells the user a password-like word was not learned, and [rememberAnyway] learns it. */
     public fun showSensitiveWordNotRemembered(word: String, rememberAnyway: () -> Unit) {
         latinIME.uixManager.showSensitiveWordNotRemembered(word, rememberAnyway)
     }

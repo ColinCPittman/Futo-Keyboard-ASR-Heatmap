@@ -45,7 +45,7 @@
     <string name="pluto_copy_learned_words_loading">Looking for learned words…</string>
     <string name="pluto_copy_learned_words_none">No new learned words to copy. When the keyboard learns names or other new words from your typing, they\'ll show up here.</string>
     <string name="pluto_copy_learned_words_sensitive_header">⚠ Looks sensitive</string>
-    <string name="pluto_copy_learned_words_sensitive_explanation">These look like passwords or keys. Don\'t copy them: other apps could read them.</string>
+    <string name="pluto_copy_learned_words_sensitive_explanation">These look like passwords or keys. Don\'t copy them, because other apps could read them.</string>
     <string name="pluto_copy_learned_words_words_header">Learned words</string>
     <string name="pluto_copy_learned_words_forget">Forget from keyboard</string>
     <string name="pluto_copy_learned_words_never">Never suggest</string>
@@ -69,12 +69,12 @@
     <string name="pluto_voice_setup_title">Set up voice typing</string>
     <string name="pluto_voice_setup_subtitle">Get the voice typing model, plus optional punctuation and Smart corrections</string>
     <string name="pluto_voice_setup_intro">Pluto has no internet access, so it can\'t download models by itself. Tap Download to get a file in your browser, then come back here, tap Import and choose the file you downloaded.</string>
-    <string name="pluto_voice_setup_step_voice_title">1. Voice typing: Moonshine Small — English (124 MB)</string>
+    <string name="pluto_voice_setup_step_voice_title">1. Voice typing (Moonshine Small, English, 124 MB)</string>
     <string name="pluto_voice_setup_step_voice_body">Recommended. Turns your speech into text as you talk. Other sizes are on the voice model page (Languages &amp; Models → English → Voice Input Model).</string>
     <string name="pluto_voice_setup_step_punctuation_title">2. Punctuation (optional, 67 MB)</string>
     <string name="pluto_voice_setup_step_punctuation_body">Adds periods, commas and capital letters after you stop speaking, and fixes sentences broken up by pauses.</string>
     <string name="pluto_voice_setup_step_context_title">3. Smart corrections (optional, 470 MB, English)</string>
-    <string name="pluto_voice_setup_step_context_body">Reads each finished dictation with a small language model and fixes what only the whole sentence can tell: misheard words (“bulls” → “bowls”, “their” → “there”), and names and words from your personal dictionary. You can also turn on numbers as digits, voice commands like “new paragraph”, filler word removal, self-correction fixes, quotation marks and emoji by name. It never rephrases what you said and adds up to about two seconds after you stop speaking.</string>
+    <string name="pluto_voice_setup_step_context_body">Reads each finished dictation with a small language model and fixes what only the whole sentence can tell, like misheard words (“bulls” → “bowls”, “their” → “there”) and names and words from your personal dictionary. You can also turn on numbers as digits, voice commands like “new paragraph”, filler word removal, self-correction fixes, quotation marks and emoji by name. It never rephrases what you said and adds up to about two seconds after you stop speaking.</string>
     <string name="pluto_voice_setup_other_sizes">See other sizes</string>
     <string name="pluto_voice_setup_download">Download</string>
     <string name="pluto_voice_setup_import">Import</string>
@@ -93,7 +93,7 @@
     <string name="help_menu_pluto_upstream_docs_subtitle">FUTO\'s guide to the features Pluto Keyboard shares with FUTO Keyboard. Please report Pluto Keyboard problems on GitHub, not to FUTO.</string>
 
     <!-- Voice Input: which app the microphone button uses -->
-    <string name="voice_input_settings_backend_system_hint">Choose which app the microphone button uses. Pluto\'s built-in voice typing works offline; other apps may not.</string>
+    <string name="voice_input_settings_backend_system_hint">Choose which app the microphone button uses. Pluto\'s built-in voice typing works offline, but other apps may not.</string>
     <string name="voice_input_settings_open_android_keyboards">Open Android keyboard settings</string>
     <string name="voice_input_settings_open_android_keyboards_subtitle">Turn on other voice typing apps, such as Google voice typing</string>
 
@@ -105,13 +105,17 @@
 
     <!-- Smart corrections for typing (Text prediction setting, strip chip, review list) -->
     <string name="typing_smart_corrections">Smart corrections for typing</string>
-    <string name="typing_smart_corrections_nav_subtitle">Fixes typos that are real words.</string>
+    <string name="typing_smart_corrections_nav_subtitle">Catches typos that slip past autocorrect, using the words around them.</string>
     <string name="typing_smart_corrections_enable">Use Smart corrections for typing</string>
-    <string name="typing_smart_corrections_subtitle">Fixes typos that are real words, like “salt an pepper”, once the words around them make it clear. Tap the undo button above the keyboard to undo. English only.</string>
+    <string name="typing_smart_corrections_subtitle">Rereads each sentence you finish and fixes the typos that slipped through, using the words around them. Choose which kinds below. Tap the undo button above the keyboard to change a fix back. Undoing teaches it to be more careful there, and fixing a miss yourself builds its confidence. English only.</string>
+    <string name="typing_fix_real_words">Fix typos that are real words</string>
+    <string name="typing_fix_real_words_subtitle">Catches slips that spell another word, like “salt an pepper” or “an email form my boss”, once the rest of the sentence makes it clear. Uses the typing corrections list.</string>
+    <string name="typing_fix_missed_typos">Attempt to fix missed typos</string>
+    <string name="typing_fix_missed_typos_subtitle">When a misspelled word slips through, say because it was the middle suggestion so the space bar kept it, this works out the word you meant from the letters you typed and the sentence around them, like “ststy the game” → “start the game”. It only steps in when one word is the clear answer. Your own words, names and abbreviations are left alone.</string>
     <string name="typing_smart_corrections_tags">typo real word fix sentence context autocorrect smart corrections</string>
     <string name="typing_fix_revert_description">Changed to <xliff:g name="new" example="and">%1$s</xliff:g>. Tap to change back to <xliff:g name="old" example="an">%2$s</xliff:g>.</string>
     <string name="typing_fix_more_description">Review all <xliff:g name="count" example="3">%1$d</xliff:g> fixes</string>
-    <string name="typing_fix_stale_description"><xliff:g name="old" example="an">%1$s</xliff:g> to <xliff:g name="new" example="and">%2$s</xliff:g>: the text there changed, so it can\'t be undone here.</string>
+    <string name="typing_fix_stale_description">%1$s to %2$s (the text there changed, so it can\'t be undone here).</string>
     <string name="typing_fix_list_title">Typing fixes</string>
     <string name="typing_fix_chip_on_right">Typing fix buttons on the right</string>
     <string name="typing_fix_chip_on_right_subtitle">The undo button for a typing fix, and the close button of the fix list, sit on the right near your thumb. Turn off to put them on the left.</string>
@@ -121,7 +125,7 @@
     <string name="typing_pairs_header">Typing corrections</string>
     <string name="typing_pairs_explanation">A word you typed is only fixed into a word in its pairs, and only when the sentence around it makes the fix clear.</string>
     <string name="typing_pairs_builtin">Built-in pairs</string>
-    <string name="typing_pairs_builtin_count">%1$s typed words, %2$s pairs. Off: only your own pairs are used.</string>
+    <string name="typing_pairs_builtin_count">%1$s typed words, %2$s pairs. Turn this off and only your own pairs are used.</string>
     <string name="typing_pairs_builtin_off_note">Built-in pairs are off, so these are not used. Turn them on to use them.</string>
     <string name="typing_pairs_search">Search a typed word</string>
     <string name="typing_pairs_search_prompt">Type a word to see what it can be fixed into.</string>
@@ -148,5 +152,6 @@
     <string name="typing_pairs_never_row">Never change “%1$s”</string>
     <string name="typing_pairs_reset">Undo your changes</string>
     <string name="typing_pairs_reset_confirm">This removes your own pairs and never-change words and switches the built-in pairs back on.</string>
+    <string name="typing_smart_corrections_sensitivity_subtitle">Slide left and it holds back, changing your words only when it’s sure. Slide right and it steps in more readily.</string>
     <string name="typing_fix_chip_on_left_subtitle">The undo button for a typing fix, and the close button of the fix list, sit on the left. Turn on to put them on the right.</string>
 </resources>

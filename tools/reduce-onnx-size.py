@@ -58,7 +58,7 @@ if embed_mode != "none":
         gather.input[0] = EMB + "_q"
         gather.output[0] = out + "_q"
         idx = list(g.node).index(gather)
-        # dequantize AFTER the gather: x = q * scale[row]; per-row scale gathered with the same indices
+        # dequantize AFTER the gather (x = q * scale[row]) and gather the per-row scale with the same indices
         sc_out = out + "_scale_rows"
         g.node.insert(idx + 1, helper.make_node("Gather", [EMB + "_scale", gather.input[1]], [sc_out], axis=0, name="emb_scale_gather"))
         g.node.insert(idx + 2, helper.make_node("Cast", [out + "_q"], [out + "_qf"], to=TensorProto.FLOAT, name="emb_cast"))

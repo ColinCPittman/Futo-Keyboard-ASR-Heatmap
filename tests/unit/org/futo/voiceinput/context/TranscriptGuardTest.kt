@@ -105,6 +105,10 @@ class TranscriptGuardTest {
         assertTrue(TranscriptGuard.checkBreakJoin(t, 11, 17, " that").accepted)
         assertTrue(TranscriptGuard.checkBreakJoin("Ask Marcus. Who left.", 10, 15, " Who").accepted)
         assertFalse(TranscriptGuard.checkBreakJoin("Ask now. I left.", 7, 10, " i").accepted)
+        // the period may become a comma ("Marcus, who")
+        assertTrue(TranscriptGuard.checkBreakJoin("Ask Marcus. Who left.", 10, 15, ", who").accepted)
+        assertFalse(TranscriptGuard.checkBreakJoin("Ask Marcus. Who left.", 10, 15, "; who").accepted)
+        assertFalse(TranscriptGuard.checkBreakJoin("Ask Marcus. Who left.", 10, 15, ", whom").accepted)
         assertFalse(TranscriptGuard.checkBreakJoin(t, 11, 17, " this").accepted)
         assertFalse(TranscriptGuard.checkBreakJoin("Wait... That is it.", 4, 12, " that").accepted)
     }

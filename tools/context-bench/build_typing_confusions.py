@@ -69,7 +69,7 @@ def slips(w: str, nb: dict[str, set[str]]):
     for i in range(len(w) + 1):  # missed key
         for o in letters:
             yield w[:i] + o + w[i:]
-    for i in range(len(w)):  # extra key: next to (or the same as) a letter beside it
+    for i in range(len(w)):  # extra key, next to (or the same as) a letter beside it
         side = {w[i - 1]} if i > 0 else set()
         if i + 1 < len(w):
             side.add(w[i + 1])
@@ -93,7 +93,7 @@ def contraction_slips(c: str, nb: dict[str, set[str]]):
         for o in nb[ch]:  # neighbouring key instead
             yield c[:i] + o + c[i + 1:]
         yield c[:i] + c[i + 1:]  # missed key
-    for i in range(len(c) + 1):  # extra key: the same as or next to a letter beside it
+    for i in range(len(c) + 1):  # extra key, the same as or next to a letter beside it
         side = [x for x in (c[i - 1] if i > 0 else "", c[i] if i < len(c) else "") if x.isalpha()]
         for o in letters:
             if any(o == x or o in nb[x] for x in side):
@@ -119,12 +119,12 @@ def main():
         for c in slips(w, nb):
             if c != w and c in intended_words and len(c) >= 2 and (w, c) not in EXCLUDE:
                 table.setdefault(w, {})[c] = intended_words[c]
-    # contractions: the typed form has the apostrophe (so it is never a word); "kit's" -> "it's"
+    # contractions, where the typed form has the apostrophe (so it is never a word), as in "kit's" -> "it's"
     for c in CONTRACTIONS:
         for t in set(contraction_slips(c, nb)):
             if t != c and t not in CONTRACTIONS and re.fullmatch(r"[a-z]+'[a-z]+", t) and len(t) >= 4:
                 table.setdefault(t, {})[c] = 255
-    # a slip works both ways: if "trick" may be a slip of "truck", "truck" may be one of "trick",
+    # a slip works both ways, so if "trick" may be a slip of "truck", "truck" may be one of "trick",
     # when both are common enough to be typed
     for w, cs in list(table.items()):
         for c in cs:

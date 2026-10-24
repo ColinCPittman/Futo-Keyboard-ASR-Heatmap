@@ -1,5 +1,6 @@
 package org.futo.voiceinput.shared.engine
 
+import org.futo.voiceinput.shared.moonshine.core.MoonshineStreamingTranscriber
 import org.futo.voiceinput.shared.moonshine.core.OrtAccelerator
 import org.futo.voiceinput.shared.moonshine.core.OrtRuntimeOptions
 import java.io.File
@@ -7,20 +8,22 @@ import java.io.File
 /** Which speech recognition engine an [org.futo.voiceinput.shared.AudioRecognizer] drives. */
 sealed class RecognitionEngineConfiguration {
     /**
-     * The original whisper.cpp engine: audio is recorded (up to 30 s, or more
+     * The original whisper.cpp engine. Audio is recorded (up to 30 s, or more
      * with long-form input) and transcribed once recording stops.
      */
     object Whisper : RecognitionEngineConfiguration()
 
     /**
-     * Moonshine streaming (English only) on ONNX Runtime: audio is transcribed
+     * Moonshine streaming (English only) on ONNX Runtime. Audio is transcribed
      * while recording, with live partial results and no length limit.
      */
     data class MoonshineStreaming(
         /** Directory of an installed `moonshine-streaming` model package. */
         val modelDir: File,
         val modelName: String,
-        val runtime: OrtRuntimeOptions
+        val runtime: OrtRuntimeOptions,
+        /** Live text, refresh interval and the pause that ends a phrase (Voice Input -> Advanced options). */
+        val streaming: MoonshineStreamingTranscriber.Options = MoonshineStreamingTranscriber.Options()
     ) : RecognitionEngineConfiguration()
 }
 
@@ -41,7 +44,7 @@ data class RecognitionStats(
 ) {
     val realTimeFactor: Double get() = if (audioSeconds > 0) processingSeconds / audioSeconds else 0.0
 
-    /** One-line human readable summary (English; diagnostic only). */
+    /** One-line human readable summary (in English, for diagnostics only). */
     fun summary(): String = buildString {
         append("%s: %.1f s audio, %.2f s processing (RTF %.2f), final %.2f s".format(
             modelName, audioSeconds, processingSeconds, realTimeFactor, finalizeSeconds))

@@ -9,7 +9,9 @@ import org.futo.voiceinput.shared.engine.TranscriptPostProcessor
 import org.futo.voiceinput.shared.modelpackage.InstalledModelPackage
 import org.futo.voiceinput.shared.modelpackage.ModelPackageKinds
 import org.futo.voiceinput.shared.modelpackage.ModelPackages
+import org.futo.voiceinput.shared.RecordingSettings
 import org.futo.voiceinput.shared.moonshine.core.MoonshineModelFiles
+import org.futo.voiceinput.shared.moonshine.core.MoonshineStreamingTranscriber
 import org.futo.voiceinput.shared.moonshine.core.OrtAccelerator
 import org.futo.voiceinput.shared.moonshine.core.OrtRuntimeOptions
 import java.util.Locale
@@ -46,28 +48,44 @@ object VoiceInputEngines {
             runtime = OrtRuntimeOptions(
                 accelerator = accelerator(context),
                 threads = context.getSetting(MOONSHINE_THREADS).coerceIn(0, 16)
+            ),
+            streaming = MoonshineStreamingTranscriber.Options(
+                transcriptionInterval = context.getSetting(MOONSHINE_REFRESH_MS).coerceIn(100, 5000) / 1000f,
+                decodeIncompleteLines = context.getSetting(MOONSHINE_LIVE_TEXT)
             )
         )
     }
 
+    /** Choices for [MOONSHINE_REFRESH_MS] and [MOONSHINE_AUTO_STOP_MS] (Voice Input -> Advanced options). */
+    val REFRESH_CHOICES_MS = listOf(250, 500, 1000)
+    val AUTO_STOP_CHOICES_MS = listOf(1000, 1500, 2000, 3000, 5000)
+
+    /** How long a silence ends a dictation on [engine], and only Moonshine has the setting. */
+    fun autoStopSilenceMs(context: Context, engine: RecognitionEngineConfiguration): Int =
+        if (engine is RecognitionEngineConfiguration.MoonshineStreaming) {
+            context.getSetting(MOONSHINE_AUTO_STOP_MS).coerceIn(500, 10000)
+        } else {
+            RecordingSettings.DEFAULT_AUTO_STOP_SILENCE_MS
+        }
+
     /**
      * A post-processing stage of voice input, for the chain built by [postProcessorFor].
-     * [originalSegments]: the stage gets the engine's segments (the utterances between pauses)
-     * even when it is not the first stage; otherwise later stages get the previous text as one segment.
+     * With [originalSegments], the stage gets the engine's segments (the utterances between pauses)
+     * even when it is not the first stage, and otherwise later stages get the previous text as one segment.
      */
     class Stage(val name: String, val processor: TranscriptPostProcessor, val originalSegments: Boolean = false)
 
     /**
      * Post-processing applied to the final transcript of [engine] before it is inserted, as a
-     * chain of optional stages: punctuation restoration ([PunctuationModels]), then the context
+     * chain of optional stages, namely punctuation restoration ([PunctuationModels]), then the context
      * model ([ContextModels]), each if it is enabled and a model supporting [locale] is
      * installed. The identity if no stage applies.
      *
-     * The first stage gets the engine's segments; later stages get the previous stage's text as
+     * The first stage gets the engine's segments, and later stages get the previous stage's text as
      * one segment, except the context stage, which gets the engine's segments too (its spoken
      * commands only count at pauses). A failing stage is skipped (its input is passed on), so the
      * transcript is never lost. [onStageDone] receives each stage's name and duration (for the
-     * timing info). [personal]: the user's personal words, for the context stage's names option. [leftContext]:
+     * timing info). [personal] holds the user's personal words, for the context stage's names option. [leftContext] is
      * the text in the field before the dictation (read when the context stage runs), which the context stage reads but never edits.
      * Whisper punctuates its own output, so the punctuation stage only runs after Moonshine.
      */
@@ -85,7 +103,7 @@ object VoiceInputEngines {
                 ?.let { Stage(STAGE_PUNCTUATION, it) },
             ContextModels.processorFor(context, locale, personal, leftContext)?.let { Stage(STAGE_CONTEXT, it, originalSegments = true) },
         )
-        // Developer setting "Save dictations for tuning": keep each step's output (DictationRecorder)
+        // Developer setting "Save dictations for tuning" keeps each step's output (DictationRecorder)
         if (DictationRecorder.isEnabled(context)) {
             return TranscriptPostProcessor { raw, segments ->
                 val outputs = ArrayList<Pair<String, String>>()

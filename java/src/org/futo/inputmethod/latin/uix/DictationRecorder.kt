@@ -9,10 +9,10 @@ import java.io.File
 import java.util.Locale
 
 /**
- * Developer setting "Save dictations for tuning": keeps the newest [MAX_ENTRIES] dictations, each
+ * Developer setting "Save dictations for tuning" keeps the newest [MAX_ENTRIES] dictations, each
  * as the voice model heard it (with its pause segments), the text after every voice-input stage
  * and the Smart corrections options, so they can be copied to a computer and replayed through the
- * test tools (`tools/context-harness`). Off by default; nothing leaves the phone by itself.
+ * test tools (`tools/context-harness`). Off by default, and nothing leaves the phone by itself.
  *
  * After the user edits an inserted dictation, its entry also gets a "corrected" field
  * ([DictationFollowUp]).
@@ -33,12 +33,12 @@ object DictationRecorder {
 
     private val notes = java.util.concurrent.ConcurrentHashMap<String, Long>()
 
-    /** A number (milliseconds, a length) about the dictation being processed; saved in its "timing" field. Numbers only. */
+    /** A number (milliseconds, a length) about the dictation being processed, saved in its "timing" field. Numbers only. */
     fun note(context: Context, key: String, value: Long) {
         if (isEnabled(context)) notes[key] = value
     }
 
-    /** Time of the newest saved dictation (0 if none this run); see [DictationFollowUp]. */
+    /** Time of the newest saved dictation (0 if none this run). See [DictationFollowUp]. */
     @Volatile
     var lastTime = 0L
         private set
@@ -62,7 +62,7 @@ object DictationRecorder {
         }
     }
 
-    /** Saves one dictation. Never throws: recording must not break voice input. */
+    /** Saves one dictation. Never throws, because recording must not break voice input. */
     @Synchronized
     fun record(context: Context, locale: Locale, raw: String, segments: List<String>, stages: List<Pair<String, String>>, stageMs: List<Pair<String, Long>> = emptyList()) {
         try {

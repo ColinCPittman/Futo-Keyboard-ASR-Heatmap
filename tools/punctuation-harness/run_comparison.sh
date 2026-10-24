@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Runs the Kotlin engines on the test inputs in --pure mode and compares with the Python references.
-# Needs: a JDK whose VC++ runtime is recent enough for onnxruntime 1.31 (see README note in build.gradle),
-#        python venv with punctuators/onnxruntime/transformers, models under $MODELS.
+# Needs a JDK whose VC++ runtime is recent enough for onnxruntime 1.31 (see README note in build.gradle),
+#        and a python venv with punctuators/onnxruntime/transformers, models under $MODELS.
 # usage: run_comparison.sh [--regen-refs]
 set -e
 MODELS=${MODELS:-/d/FUTO-models/punctuation}

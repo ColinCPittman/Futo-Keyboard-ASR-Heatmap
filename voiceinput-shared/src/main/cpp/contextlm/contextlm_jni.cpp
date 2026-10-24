@@ -1,22 +1,22 @@
-// libfutoctxlm: a small LM scoring runtime for the voice-input "context" stage
+// libfutoctxlm is a small LM scoring runtime for the voice-input "context" stage
 // (org.futo.voiceinput.shared.context.LlamaNative).
 //
-// The LM is used as a judge, never as a generator: the Kotlin side asks for the
+// The LM is used as a judge, never as a generator, so the Kotlin side asks for the
 // log-probabilities of token sequences and of a few alternative tokens at chosen
-// positions. Ported from tools/context-bench/ctxrun/ctxrun.cpp (--score mode):
+// positions. Ported from tools/context-bench/ctxrun/ctxrun.cpp (--score mode). There are two evaluations.
 //
-//  * evalBase: sequence 0 holds the "base" text (prompt prefix + transcript). The KV
-//    cells of a prefix that is already decoded are kept (truncate to `keep` tokens);
+//  * evalBase. Sequence 0 holds the "base" text (prompt prefix + transcript). The KV
+//    cells of a prefix that is already decoded are kept (truncate to `keep` tokens) and
 //    only the suffix is decoded. Returns the log-prob of every token from `needFrom`
 //    on, plus the log-probs of extra token ids at chosen positions (e.g. "?" vs ".").
-//  * evalVariants: variants of the base that share a prefix with it. Each variant
+//  * evalVariants takes variants of the base that share a prefix with it. Each variant
 //    gets its own sequence whose cells for the shared part are copied from sequence 0
-//    (no recomputation); all variant tails are decoded together in as few batches
+//    (no recomputation), and all variant tails are decoded together in as few batches
 //    as possible.
 //
-// llama.cpp/ggml are linked statically with hidden visibility; only the JNI entry
+// llama.cpp/ggml are linked statically with hidden visibility, and only the JNI entry
 // points below are exported (see exports.map), so nothing clashes with the older
-// ggml copy inside libjni_latinime.so. CPU only; no networking anywhere.
+// ggml copy inside libjni_latinime.so. CPU only, with no networking anywhere.
 
 #include <jni.h>
 
@@ -122,8 +122,8 @@ extern "C" {
 
 #define JFN(name) Java_org_futo_voiceinput_shared_context_LlamaNative_##name
 
-// Loads a GGUF (memory-mapped). cpus: optional core ids to pin the worker threads to.
-// repack: let ggml convert the weight matrices into the layout of its fastest CPU kernels
+// Loads a GGUF (memory-mapped). cpus holds optional core ids to pin the worker threads to.
+// repack lets ggml convert the weight matrices into the layout of its fastest CPU kernels
 // (e.g. Q4_0 -> 4x8 interleaved on ARM). Those copies live in anonymous memory instead of
 // the file mapping, but scoring is much faster.
 JNIEXPORT jlong JNICALL JFN(nativeLoad)(JNIEnv * env, jobject, jstring jpath, jint threads, jintArray jcpus,
@@ -157,7 +157,7 @@ JNIEXPORT jlong JNICALL JFN(nativeLoad)(JNIEnv * env, jobject, jstring jpath, ji
     return reinterpret_cast<jlong>(lm);
 }
 
-// (Re)creates the inference context: n_ctx KV cells shared by n_seq_max sequences.
+// (Re)creates the inference context with n_ctx KV cells shared by n_seq_max sequences.
 JNIEXPORT jboolean JNICALL JFN(nativeInitContext)(JNIEnv *, jobject, jlong h, jint n_ctx, jint n_batch, jint n_seq_max) {
     Lm * lm = get(h);
     lm->free_context();
@@ -225,7 +225,7 @@ JNIEXPORT jstring JNICALL JFN(nativeDescribe)(JNIEnv * env, jobject, jlong h) {
 
 // Sequence 0 := tokens. KV cells of tokens[0, keep) are kept (keep is clamped to the common
 // prefix with what sequence 0 holds), tokens[keep, n) are decoded. Returns first_index =
-// max(keep + 1, needFrom) and then, for every token index i in [first_index, n): log P(tokens[i])
+// max(keep + 1, needFrom) and then, for every token index i in [first_index, n), log P(tokens[i])
 // followed by the log-probs of wantIds[wantOff[i] .. wantOff[i + 1]) at that position.
 // Null on failure.
 JNIEXPORT jfloatArray JNICALL JFN(nativeEvalBase)(JNIEnv * env, jobject, jlong h, jintArray jtokens, jint jkeep,
@@ -243,7 +243,7 @@ JNIEXPORT jfloatArray JNICALL JFN(nativeEvalBase)(JNIEnv * env, jobject, jlong h
     keep = std::min(keep, lcp);
     const int out_from = std::max(keep + 1, (int) need_from);
 
-    std::vector<float> result{(float) out_from};  // first value: the first index returned
+    std::vector<float> result{(float) out_from};  // first value is the first index returned
     std::vector<int> slot(n, -1);  // start of token i's entry in result
     for (int i = out_from; i < n; i++) {
         slot[i] = (int) result.size();
@@ -336,7 +336,7 @@ JNIEXPORT jobjectArray JNICALL JFN(nativeEvalVariants)(JNIEnv * env, jobject, jl
         const auto & t = vars[v];
         const int n = (int) t.size();
         const int s = starts[v];
-        if (s >= n) continue;  // a prefix of the base: nothing to compute
+        if (s >= n) continue;  // a prefix of the base, so nothing to compute
         const int from = s - 1;  // its logits predict token s
         const int tail = n - from;
         if (next_seq >= lm->n_seq_max || base_cells + cells + tail + lm->n_batch > lm->n_ctx) {
@@ -374,7 +374,7 @@ JNIEXPORT jobjectArray JNICALL JFN(nativeEvalVariants)(JNIEnv * env, jobject, jl
     return out;
 }
 
-// Makes a running (or the next) decode stop early; it then fails and returns null.
+// Makes a running (or the next) decode stop early, and it then fails and returns null.
 JNIEXPORT void JNICALL JFN(nativeSetAbort)(JNIEnv *, jobject, jlong h, jboolean value) {
     get(h)->abort.store(value == JNI_TRUE);
 }

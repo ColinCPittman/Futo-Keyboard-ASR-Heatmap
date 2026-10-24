@@ -5,7 +5,7 @@ import org.futo.voiceinput.shared.engine.TranscriptPostProcessor
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-/** The post-processing chain: the context stage gets the engine's segments (its voice commands need the pauses). */
+/** The post-processing chain, where the context stage gets the engine's segments (its voice commands need the pauses). */
 class VoiceInputEnginesTest {
     @Test
     fun contextStageGetsOriginalSegments() {

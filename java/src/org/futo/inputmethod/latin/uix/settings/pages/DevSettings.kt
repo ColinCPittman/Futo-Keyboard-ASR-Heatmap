@@ -341,8 +341,8 @@ fun DeveloperScreen(navController: NavHostController = rememberNavController()) 
             }
         )
 
-        // Pluto: FUTO's payment overrides ("Is paid", license key, payment notices) are left out:
-        // the payment screen is FUTO's to manage, so there is no way to change it here.
+        // Pluto: FUTO's payment overrides ("Is paid", license key, payment notices) are left out,
+        // because the payment screen is FUTO's to manage, so there is no way to change it here.
 
         ScreenTitle(title = "Here be dragons")
         val context = LocalContext.current

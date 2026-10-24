@@ -156,7 +156,7 @@ def warp(arr, scale, src_anchor, dst_anchor, out_size, resample=Image.BICUBIC):
     inv = 1.0 / scale
     sx, sy = src_anchor
     dx, dy = dst_anchor
-    # PIL affine maps output -> input: x_in = a*x + b*y + c
+    # PIL affine maps output -> input, as x_in = a*x + b*y + c
     coeffs = (inv, 0, sx - dx * inv, 0, inv, sy - dy * inv)
     chans = []
     for c in range(arr.shape[2]):
@@ -315,7 +315,7 @@ class Layout:
         ctr = (size / 2, size / 2)
         km = key_mask if art_arr.ndim == 2 else key_mask[..., None]
         group = warp(art_arr * (1 - km), s, (self.cx, self.cy), ctr, size)
-        # keyboard: compose its own transform into group coordinates
+        # the keyboard composes its own transform into group coordinates
         kdst = ((self.k_dst[0] - self.cx) * s + ctr[0], (self.k_dst[1] - self.cy) * s + ctr[1])
         kb = warp(art_arr * km, s * self.k_scale, self.k_anchor, kdst, size)
         return np.clip(group + kb, 0, 1)
@@ -474,7 +474,7 @@ def main():
 
     save_png(to_image(unpremul(resize_premul(visible, 512))), os.path.join(REPO, "java", "ic_launcher-playstore.png"))
 
-    # 5. docs icons: the original composition (art fills more of the tile) -------
+    # 5. docs icons use the original composition (art fills more of the tile) -------
     docs = os.path.join(REPO, "docs", "assets")
     hi = 1024
     doc_icon = render_doc_icon(art, lay, hi)
@@ -507,7 +507,7 @@ def render_doc_icon(art, lay, size):
 
 
 def render_banner(doc_icon_p, W=1280, H=400):
-    # background: same navy gradient, stretched horizontally, glow behind the icon
+    # background is the same navy gradient, stretched horizontally, with a glow behind the icon
     y = (np.arange(H) + 0.5) / H
     x = (np.arange(W) + 0.5) / W
     X, Y = np.meshgrid(x, y)

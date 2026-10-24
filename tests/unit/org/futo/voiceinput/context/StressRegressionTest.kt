@@ -12,7 +12,7 @@ import org.junit.Test
 
 /**
  * Misfires found by the stress test (tools/context-bench/stress, LOG.md), as rules without the
- * LM: every candidate the rules propose for these sentences, each checked by the guard.
+ * LM, covering every candidate the rules propose for these sentences, each checked by the guard.
  */
 class StressRegressionTest {
     /** Common lowercase words, as the lexicon's case data would say. */
@@ -58,9 +58,9 @@ class StressRegressionTest {
     fun fillersAndRepeats() {
         none(Kind.FILLER, "Uh huh, that's what I thought.", "Uh oh, I left the stove on.")
         none(Kind.REPEAT, "Got it, got it, thanks.", "I know, I know, I should have called.", "Sorry, sorry, I didn't see you.",
-            "I ordered the mahi mahi.", "We went to Bora Bora.")
+            "I ordered the mahi mahi.", "We went to Bora Bora.", "Do you, you know, want to come along?")
         assertEquals(listOf("I think we should go."), candidates("I I think we should go.", Kind.REPEAT))
-        // a filler the voice model made its own sentence: or join across it
+        // a filler the voice model made its own sentence, or join across it
         assertTrue("I was thinking we could go." in candidates("I was. Um. Thinking we could go.", Kind.FILLER))
         assertTrue("The meeting is at 2." in candidates("The meeting is, um... At 2.", Kind.FILLER))
     }

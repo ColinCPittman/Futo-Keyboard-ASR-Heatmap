@@ -14,7 +14,7 @@ object MoonshineModelFiles {
     const val CONFIG = "streaming_config.json"
     const val TOKENIZER = "tokenizer.bin"
 
-    /** Files that must exist in a model directory (frontend: split pair or single file). */
+    /** Files that must exist in a model directory (the frontend is a split pair or a single file). */
     val REQUIRED_FILES = listOf(ENCODER, ADAPTER, CROSS_KV, DECODER_KV, CONFIG, TOKENIZER)
 
     /** Returns a list of problems with [dir], empty if it looks loadable. */

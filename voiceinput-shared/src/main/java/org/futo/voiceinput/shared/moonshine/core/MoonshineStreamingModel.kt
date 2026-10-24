@@ -37,13 +37,13 @@ class MoonshineStreamingState internal constructor(private val config: Moonshine
     internal val memory = FloatList(config.decoderDim * 256)
     internal var memoryLen = 0
 
-    // Decoder self-attention KV cache: owned by the Result of the last decoder run
+    // Decoder self-attention KV cache, owned by the Result of the last decoder run
     internal var selfResult: OrtSession.Result? = null
     internal var kSelf: OnnxTensor? = null
     internal var vSelf: OnnxTensor? = null
     internal var cacheSeqLen = 0
 
-    // Cross-attention K/V computed from memory: owned by the cross_kv Result
+    // Cross-attention K/V computed from memory, owned by the cross_kv Result
     internal var crossResult: OrtSession.Result? = null
     internal var kCross: OnnxTensor? = null
     internal var vCross: OnnxTensor? = null
@@ -116,7 +116,7 @@ class MoonshineTimings {
  * The five ONNX graphs of a Moonshine streaming model plus tokenizer (port of
  * `MoonshineStreamingModel`).
  *
- * Not thread-safe by itself; [MoonshineStreamingTranscriber] serializes access.
+ * Not thread-safe by itself, but [MoonshineStreamingTranscriber] serializes access.
  */
 class MoonshineStreamingModel private constructor(
     val modelDir: File,
@@ -175,7 +175,7 @@ class MoonshineStreamingModel private constructor(
     /**
      * Runs the frontend on [length] samples starting at [offset]. Callers must
      * feed multiples of 80 samples (the published English graphs drop a
-     * remainder; see transcriber.cpp). Returns the number of new feature frames.
+     * remainder, as in transcriber.cpp). Returns the number of new feature frames.
      */
     fun processAudioChunk(state: MoonshineStreamingState, audio: FloatArray, offset: Int, length: Int): Int {
         checkOpen()
@@ -342,7 +342,7 @@ class MoonshineStreamingModel private constructor(
                 val newV = result.tensor("out_v_self")
                 val newLen = newK.info.shape[3].toInt()
 
-                // The previous cache tensors were inputs of this run; release them now.
+                // The previous cache tensors were inputs of this run, so release them now.
                 state.selfResult?.close()
                 state.selfResult = result
                 state.kSelf = newK
@@ -370,11 +370,11 @@ class MoonshineStreamingModel private constructor(
         return best
     }
 
-    /** Clears the self-attention cache; cross K/V stays valid until memory changes. */
+    /** Clears the self-attention cache, and cross K/V stays valid until memory changes. */
     fun decoderReset(state: MoonshineStreamingState) = state.resetDecoderCache()
 
     /**
-     * Single-token decode step: returns the argmax of the next-token logits.
+     * Single-token decode step that returns the argmax of the next-token logits.
      * Returns EOS when there is no memory yet.
      */
     fun decodeStep(state: MoonshineStreamingState, token: Int): Int {
@@ -387,7 +387,7 @@ class MoonshineStreamingModel private constructor(
     /**
      * Greedy decode with optional speculative verification of [draft] (port of
      * `decode_full`). The draft (the previous hypothesis for this utterance,
-     * without BOS/EOS) is checked in one batched decoder pass; tokens are
+     * without BOS/EOS) is checked in one batched decoder pass, and tokens are
      * accepted up to the first mismatch and decoding continues from there.
      * Returns the tokens without BOS/EOS. The caller must reset the decoder
      * cache first.
@@ -428,7 +428,7 @@ class MoonshineStreamingModel private constructor(
             if (divergePoint == draft.size) {
                 continueAr(predictions[draft.size])
             } else {
-                // Diverged: re-run with only the accepted tokens so the cache matches.
+                // Diverged, so re-run with only the accepted tokens so the cache matches.
                 state.resetDecoderCache()
                 val accepted = LongArray(divergePoint + 1)
                 accepted[0] = config.bosId.toLong()
@@ -510,7 +510,7 @@ class MoonshineStreamingModel private constructor(
                 val splitFrontend = File(dir, MoonshineModelFiles.FRONTEND_MODEL).isFile && File(dir, MoonshineModelFiles.FRONTEND_WEIGHTS).isFile
                 val frontend = if (splitFrontend) {
                     // The split frontend keeps int8 weights in a separate graph whose
-                    // outputs are the dequantized float weights; run it once and feed
+                    // outputs are the dequantized float weights, so run it once and feed
                     // the results as extra inputs on every frontend run.
                     val weightsSession = factory.open(File(dir, MoonshineModelFiles.FRONTEND_WEIGHTS), cpuOnly = true)
                     weightsSession.run(emptyMap<String, OnnxTensor>()).use { result ->

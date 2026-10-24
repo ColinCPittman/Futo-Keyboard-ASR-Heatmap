@@ -33,14 +33,14 @@ class HeatmapKeyboardBinding internal constructor(
 ) {
     val isActive: Boolean get() = layout != null
 
-    // Scratch buffers; key detection only ever happens on the UI thread.
+    // Scratch buffers, since key detection only ever happens on the UI thread.
     private val scratchSlots = IntArray(MAX_CANDIDATES)
     private val scratchBoosted = BooleanArray(MAX_CANDIDATES)
 
     /**
      * Detects the key for a touch (keyboard coordinates). Returns null when the touch should be
-     * handled by the stock detector: the heatmap is inactive, the touch is on a non-letter key
-     * (those keep exact hitboxes), or the touch isn't on any key.
+     * handled by the stock detector (the heatmap is inactive, the touch is on a non-letter key
+     * (those keep exact hitboxes), or the touch isn't on any key).
      */
     fun detect(touchX: Int, touchY: Int, nearestKeys: List<Key>, boostedCodePoints: Set<Int>?): Key? {
         val layout = layout ?: return null
@@ -77,10 +77,10 @@ class HeatmapKeyboardBinding internal constructor(
 }
 
 /**
- * Adaptive typing heatmap: learns where this user actually taps for each letter key and adapts
+ * Adaptive typing heatmap. It learns where this user actually taps for each letter key and adapts
  * key detection (and the tap coordinates given to the suggestion engines) accordingly.
  *
- * Threading: learning, key detection and UI all run on the main thread; the model is guarded by
+ * Threading: learning, key detection and UI all run on the main thread, and the model is guarded by
  * [lock] so it can be loaded/saved on a background thread. The hot path (key detection) only
  * reads immutable [HeatmapKeyboardBinding]s.
  */
@@ -96,7 +96,7 @@ object TypingHeatmap {
     private var model = HeatmapModel() // guarded by lock
     private var loaded = false // guarded by lock
     private var loading = false // guarded by lock
-    private var generation = 0 // guarded by lock; bumped on reset
+    private var generation = 0 // guarded by lock and bumped on reset
     private var dirty = false // guarded by lock
     private var wordsSinceSave = 0 // guarded by lock
 
@@ -107,7 +107,7 @@ object TypingHeatmap {
     @Volatile
     private var modelVersion = 0
 
-    /** Binding last used by the main keyboard's detector; used for coordinate correction. */
+    /** Binding last used by the main keyboard's detector, used for coordinate correction. */
     @Volatile
     private var currentBinding: HeatmapKeyboardBinding? = null
 
@@ -133,7 +133,7 @@ object TypingHeatmap {
 
     /**
      * The word being typed as it was right before its first backspace ("sebt" before fixing it to "sent"),
-     * with its taps; paired with the finished word on commit. Main thread only.
+     * with its taps, and paired with the finished word on commit. Main thread only.
      */
     private var originalAttempt: Pair<String, List<RecordedTap>>? = null
 
@@ -209,7 +209,7 @@ object TypingHeatmap {
         }
     }
 
-    /** Blocks until the model has been loaded (for the settings UI; call off the main thread). */
+    /** Blocks until the model has been loaded (for the settings UI, so call off the main thread). */
     fun ensureLoadedBlocking(context: Context) {
         init(context)
         try {
@@ -299,7 +299,7 @@ object TypingHeatmap {
                 }
             }
         }
-        // Not loaded yet (should not happen while settings are open): fall back to the saved file.
+        // Not loaded yet (should not happen while settings are open), so fall back to the saved file.
         return try {
             dataFile()?.takeIf { it.exists() }?.readText()
         } catch (e: Exception) {
@@ -337,7 +337,7 @@ object TypingHeatmap {
             modelVersion++
         }
         currentBinding = null
-        // Words still held back were typed against the old model; drop them (main thread state).
+        // Words still held back were typed against the old model, so drop them (main thread state).
         Handler(Looper.getMainLooper()).post {
             recentWords.clear()
             newestWordOpen = false
@@ -424,7 +424,7 @@ object TypingHeatmap {
 
     /**
      * Called for every touch on the main keyboard. Taps injected over adb (`input tap`, test scripts)
-     * come from the virtual device (id -1, or 0) rather than the touchscreen; their words are not
+     * come from the virtual device (id -1, or 0) rather than the touchscreen, so their words are not
      * learned, since they would pull the heatmap toward the script's tap points.
      */
     @JvmStatic
@@ -441,7 +441,7 @@ object TypingHeatmap {
     /**
      * Maps a tap on a letter key (keyboard coordinates) into the stock region of that key, so the
      * suggestion engines see the tap where this user "means" it. Returns the coordinates packed
-     * with [HeatmapLayout.packXY]; unchanged when no adaptation applies.
+     * with [HeatmapLayout.packXY], and unchanged when no adaptation applies.
      */
     @JvmStatic
     fun correctTapCoordinates(codePoint: Int, x: Int, y: Int): Long {
@@ -500,7 +500,7 @@ object TypingHeatmap {
 
         if (isResumed) {
             // The user went back to an existing word (or backspaced into the one just typed). Its
-            // original taps (if it was typed recently) are relabeled with the corrected word; the
+            // original taps (if it was typed recently) are relabeled with the corrected word, and the
             // resumed text itself has no usable taps. An emptied word is not a correction.
             if (from != null && committed.any { Character.isLetter(it) }) {
                 val entry = recentWords.relabel(from, committed)
@@ -517,10 +517,10 @@ object TypingHeatmap {
         val keyboard = lastAlphabetKeyboard ?: return
         newestWordOpen = true
         // A word typed where words were just deleted with backspace replaces the oldest of them
-        // (delete "dent", type "sent"): RecentWordBuffer relabels its taps.
+        // (delete "dent", type "sent") and RecentWordBuffer relabels its taps.
         val entry = if (isBatchMode || taps.isNullOrEmpty()) null else
             RecentWordBuffer.Entry(WordContext(profileIdFor(keyboard, lastLandscape), keyboard), typedWord, committed, taps)
-        // The word was fixed with backspace while typing it: its original taps are learned under the
+        // The word was fixed with backspace while typing it, so its original taps are learned under the
         // finished word (the retyped letters are learned from the word's own taps).
         if (attempt != null && attempt.first != committed && !isBatchMode) {
             learn(recentWords.add(RecentWordBuffer.Entry(
@@ -544,7 +544,7 @@ object TypingHeatmap {
     @JvmStatic
     fun onInputEvent(keyCode: Int, codePoint: Int) {
         if (keyCode == Constants.CODE_DELETE) {
-            // Backspacing over committed words sets them aside; if the user types replacements, their
+            // Backspacing over committed words sets them aside. If the user types replacements, their
             // taps are relabeled with those, otherwise they are dropped (it may have been an undo).
             val before = recentWords.deletedCount
             recentWords.onDelete(startsRun = newestWordOpen)
@@ -563,7 +563,7 @@ object TypingHeatmap {
      */
     @JvmStatic
     fun onWordResumed(codePoints: IntArray) {
-        // WordComposer is also used by the spell checker on binder threads; only the IME's own
+        // WordComposer is also used by the spell checker on binder threads, but only the IME's own
         // composer (main thread) is relevant.
         if (Looper.myLooper() != Looper.getMainLooper()) return
         val text = String(codePoints, 0, codePoints.size)
@@ -573,7 +573,7 @@ object TypingHeatmap {
         newestWordOpen = false
     }
 
-    /** Called when the keyboard is hidden: buffered words are final. */
+    /** Called when the keyboard is hidden, so buffered words are final. */
     @JvmStatic
     fun onKeyboardHidden() {
         originalAttempt = null

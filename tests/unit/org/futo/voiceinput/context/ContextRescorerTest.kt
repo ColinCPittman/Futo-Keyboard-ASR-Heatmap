@@ -10,7 +10,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * A word-level fake LM: tokens are " word" / punctuation pieces, and the log-prob of a token
+ * A word-level fake LM where tokens are " word" / punctuation pieces, and the log-prob of a token
  * depends on the previous word only (bigram table), so the rescorer's decisions are predictable.
  * Honors the ContextLm contract (base reuse, firstReturned, variant starts).
  */
@@ -100,8 +100,8 @@ class ContextRescorerTest {
         ("need" to "bulls") to -9f, ("need" to "bowls") to -2f, ("need" to "balls") to -4f, ("need" to "bills") to -3f,
         ("bowls" to "and") to -0.5f, ("bulls" to "and") to -3f,
         ("let's" to "meat") to -8f, ("let's" to "meet") to -1f, ("let's" to "met") to -9f,
-        ("of" to "flower") to -6f, ("of" to "flour") to -5f,  // too small a gain: kept
-        ("the" to "soup") to -2f, ("the" to "soap") to -1.5f,  // not surprising: never checked
+        ("of" to "flower") to -6f, ("of" to "flour") to -5f,  // too small a gain, so kept
+        ("the" to "soup") to -2f, ("the" to "soap") to -1.5f,  // not surprising, so never checked
     )
 
     private fun rescorer(lm: ContextLm = FakeLm(bigrams)) = ContextRescorer(lm, lexicon, ContextRescoreConfig())
@@ -149,7 +149,7 @@ class ContextRescorerTest {
         val lm = FakeLm(bigrams)
         val r = rescorer(lm).correct("I put the soup on the stove.")
         assertEquals("I put the soup on the stove.", r.text)
-        assertEquals(1, lm.evalBaseCalls)  // nothing changed: no second pass
+        assertEquals(1, lm.evalBaseCalls)  // nothing changed, so no second pass
         assertEquals(0, lm.variantCalls)
     }
 
@@ -173,7 +173,7 @@ class ContextRescorerTest {
 
     @Test
     fun defaultOptionsMatchLegacyWithoutNewData() {
-        // a version 1 lexicon and no personal words: the new default options change nothing
+        // a version 1 lexicon and no personal words, so the new default options change nothing
         for (t in listOf("We need bulls and spoons for the soup.", "Did you feed the cat.", "Let's meat at noon.", "I put the soup on the stove.")) {
             val legacy = ContextRescorer(FakeLm(bigrams), lexicon, ContextRescoreConfig(), SmartCorrectionOptions.LEGACY).correct(t).text
             val now = ContextRescorer(FakeLm(bigrams), lexicon, ContextRescoreConfig(), SmartCorrectionOptions()).correct(t).text
@@ -192,7 +192,7 @@ class ContextRescorerTest {
         val lm = FakeLm(bigrams + mapOf(("so" to "um") to -9f, ("um" to ",") to -1f, ("so" to ",") to -1f))
         val r = ContextRescorer(lm, lexicon, ContextRescoreConfig(), SmartCorrectionOptions.NONE.copy(fillers = true))
         assertTrue(r.correct("So, um, I left.").text in setOf("So, I left.", "So I left."))
-        // the option off: unchanged
+        // the option off, so unchanged
         assertEquals("So, um, I left.", ContextRescorer(FakeLm(bigrams), lexicon).correct("So, um, I left.").text)
     }
 
@@ -213,13 +213,13 @@ class ContextRescorerTest {
         val lm = { FakeLm(bigrams + mapOf(("manner" to ".") to -8f, ("manner" to "?") to -8f, ("manner" to "that") to -1f)) }
         val text = "She spoke in a manner. That is easier to follow."
         val r = ContextRescorer(lm(), lex)
-        // no pause in the utterance: the punctuation stage made the break
+        // no pause in the utterance, so the punctuation stage made the break
         assertEquals("She spoke in a manner that is easier to follow.",
             r.correct(text, segments = listOf("she spoke in a manner that is easier to follow")).text)
-        // a pause at the break, or the break already in the ASR's text: kept
+        // with a pause at the break, or the break already in the ASR's text, it is kept
         assertEquals(text, ContextRescorer(lm(), lex).correct(text, segments = listOf("she spoke in a manner", "that is easier to follow")).text)
         assertEquals(text, ContextRescorer(lm(), lex).correct(text, segments = listOf("She spoke in a manner. That is easier to follow.")).text)
-        // unknown segments: nothing is vetoed
+        // unknown segments, so nothing is vetoed
         assertEquals(text, ContextRescorer(lm(), lex).correct(text).text)
         // a real break the LM likes is kept
         val keep = "I locked the door. The dog barked."

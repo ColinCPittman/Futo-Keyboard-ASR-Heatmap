@@ -100,7 +100,7 @@ val PredictiveTextMenu = UserSettingsMenu(
             disabled = { !useSharedPrefsBool(Settings.PREF_AUTO_CORRECTION, true).value }
         ).copy(searchTags = R.string.always_use_middle_suggestion_tags),
 
-        // a row with an arrow: the switch and its options are on their own page
+        // a row with an arrow means the switch and its options are on their own page
         TypingSmartCorrectionsNavItem,
 
         userSettingToggleSharedPrefs(

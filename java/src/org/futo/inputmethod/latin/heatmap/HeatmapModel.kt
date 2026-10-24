@@ -16,7 +16,7 @@ import kotlin.math.sqrt
  * can be unit-tested on the JVM.
  */
 object HeatmapConfig {
-    /** Shrinkage prior strength: a key with n samples gets weight n / (n + PRIOR_STRENGTH). */
+    /** Shrinkage prior strength. A key with n samples gets weight n / (n + PRIOR_STRENGTH). */
     const val PRIOR_STRENGTH = 20f
 
     /**
@@ -113,7 +113,7 @@ class KeyTapStats {
         if (!dx.isFinite() || !dy.isFinite()) return
         effectiveCount = min(effectiveCount + 1f, HeatmapConfig.MAX_EFFECTIVE_COUNT)
         totalCount++
-        // Welford's update while effectiveCount < cap; exponentially weighted after that.
+        // Welford's update while effectiveCount < cap, and exponentially weighted after that.
         val alpha = 1f / effectiveCount
         val ddx = dx - meanX
         val ddy = dy - meanY
@@ -253,7 +253,7 @@ class HeatmapProfile {
     }
 }
 
-/** One learned tap: the intended key (lowercase code point) and the offset from its centre. */
+/** One learned tap, with the intended key (lowercase code point) and the offset from its centre. */
 class TapSample(
     @JvmField val codePoint: Int,
     @JvmField val dx: Float,

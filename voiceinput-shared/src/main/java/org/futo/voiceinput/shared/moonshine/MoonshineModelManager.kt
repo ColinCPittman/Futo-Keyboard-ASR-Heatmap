@@ -13,9 +13,9 @@ import java.util.concurrent.TimeUnit
  * [org.futo.voiceinput.shared.whisper.ModelManager] does for whisper), so only
  * the first use pays the load time.
  *
- * Models are handed out as leases: [cleanUp] (memory pressure, keyboard
- * closing) never closes a model that is still being used by a recognition;
- * it is closed when the last lease is released instead.
+ * Models are handed out as leases, so [cleanUp] (memory pressure, keyboard
+ * closing) never closes a model that is still being used by a recognition.
+ * It is closed when the last lease is released instead.
  *
  * The cached model is also released after [IDLE_RELEASE_MS] without use, so the
  * keyboard doesn't hold a few hundred MB between dictations on phones with little RAM.
@@ -66,12 +66,12 @@ class MoonshineModelManager {
     }
 
     private fun keyFor(dir: File, runtime: OrtRuntimeOptions): Key {
-        // Re-importing a package replaces its files; the manifest's mtime changes.
+        // Re-importing a package replaces its files, so the manifest's mtime changes.
         val generation = File(dir, "futo-model.json").lastModified()
         return Key(dir.absolutePath, generation, runtime.copy(threads = runtime.effectiveThreads))
     }
 
-    /** Returns a lease on the model in [dir], loading it if needed (slow; call off the main thread). */
+    /** Returns a lease on the model in [dir], loading it if needed (slow, so call off the main thread). */
     @Synchronized
     fun obtain(dir: File, runtime: OrtRuntimeOptions): Lease {
         idleRelease?.cancel(false)
@@ -83,7 +83,7 @@ class MoonshineModelManager {
             return Lease(existing, freshlyLoaded = false)
         }
 
-        // A different model or setting was requested: drop the old one.
+        // A different model or setting was requested, so drop the old one.
         existing?.let { retire(it) }
         current = null
 

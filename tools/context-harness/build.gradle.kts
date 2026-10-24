@@ -2,7 +2,7 @@
 //
 // Compiles the stage's Kotlin sources directly from voiceinput-shared (pure JVM, no Android
 // APIs) and runs them against the desktop build of libfutoctxlm (same C++ and llama.cpp
-// submodule as the app; see voiceinput-shared/src/main/cpp/CMakeLists.txt):
+// submodule as the app, see voiceinput-shared/src/main/cpp/CMakeLists.txt):
 //
 //   ./gradlew -p tools/context-harness installDist
 //   tools/context-harness/build/install/context-harness/bin/context-harness run \
@@ -11,7 +11,7 @@
 //   ... compare <kotlin results.jsonl> <rescore.py results.jsonl>
 //   ... lexicon <soundalike-en.lex> [words...]       (lexicon load time / lookups)
 //
-// Windows: use a JDK whose VC++ runtime is current (D:\FUTO-models\jdk-24-harness).
+// On Windows, use a JDK whose VC++ runtime is current (D:\FUTO-models\jdk-24-harness).
 
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 

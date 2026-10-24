@@ -168,8 +168,8 @@ private class VoiceInputActionWindow(
 
         shouldPlaySounds = enableSound
 
-        // Post-processing chain: punctuation restoration, then the context model (identity if both
-        // are off); load the models while the user speaks. The context model is released again
+        // Post-processing chain of punctuation restoration, then the context model (identity if both
+        // are off), and the models load while the user speaks. The context model is released again
         // when the transcript is done or this window closes.
         val locale = locales.firstOrNull() ?: Locale.ROOT
         if (DictationRecorder.isEnabled(context)) DictationFollowUp.check()
@@ -200,7 +200,8 @@ private class VoiceInputActionWindow(
                 preferBluetoothMic = useBluetoothAudio,
                 requestAudioFocus = requestAudioFocus,
                 canExpandSpace = canExpandSpace,
-                useVADAutoStop = useVAD
+                useVADAutoStop = useVAD,
+                autoStopSilenceMs = VoiceInputEngines.autoStopSilenceMs(context, engine)
             ),
             engine = engine,
             postProcessor = postProcessor
@@ -208,11 +209,11 @@ private class VoiceInputActionWindow(
     }
 
     /**
-     * Personal words for smart corrections' names option: the Android personal dictionary
+     * Personal words for smart corrections' names option, from the Android personal dictionary
      * (read-only, as for the voice glossary) plus a read-only snapshot of capitalized words the
      * keyboard has learned (user history dictionaries of the voice language, via [LearnedWords],
      * most frequent first, at most [MAX_LEARNED_NAMES]). The snapshot is taken in the background
-     * now, while the user speaks, so it costs nothing after "Done"; if it is not ready by then, or
+     * now, while the user speaks, so it costs nothing after "Done". If it is not ready by then, or
      * the device is locked, only the personal dictionary is used. Nothing is ever written.
      */
     private fun personalWordsForSmartCorrections(usePersonalDict: Boolean, locale: Locale): PersonalDictionary {
@@ -344,7 +345,7 @@ private class VoiceInputActionWindow(
 
     private var discardOnCancel = false
 
-    /** The Cancel button: nothing from this dictation is kept, and the voice window closes. */
+    /** The Cancel button keeps nothing from this dictation, and the voice window closes. */
     private fun discardDictation() {
         if (wasFinished) return
         discardOnCancel = true
@@ -426,7 +427,7 @@ private class VoiceInputActionWindow(
         publishTiming(stats.summary())
     }
 
-    /** Timing info after the final text: recognition (if reported) plus each post-processing stage. */
+    /** Timing info after the final text, with recognition (if reported) plus each post-processing stage. */
     private fun showTiming() {
         if (!showTimingInfo) return
         val stages = synchronized(stageTimings) { stageTimings.toList().also { stageTimings.clear() } }

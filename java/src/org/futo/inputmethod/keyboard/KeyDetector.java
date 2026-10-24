@@ -142,7 +142,7 @@ public class KeyDetector {
 
         final SettingsValues settingsValues = Settings.getInstance().getCurrent();
 
-        // Adaptive typing heatmap: for touches on letter keys, pick the key whose learned input
+        // Adaptive typing heatmap. For touches on letter keys, pick the key whose learned input
         // region fits best. Dictionary boosting is applied inside as a distance multiplier.
         // Touches on non-letter keys fall through to the stock detection below.
         final HeatmapKeyboardBinding heatmap = getActiveHeatmapBinding(settingsValues);

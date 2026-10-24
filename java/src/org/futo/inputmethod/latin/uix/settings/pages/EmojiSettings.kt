@@ -62,9 +62,9 @@ import org.futo.voiceinput.shared.context.EmojiNickname
 import org.futo.voiceinput.shared.context.VoiceCommands
 
 /*
- * Smart corrections → Emoji: the switch, then the emoji names. Every emoji has several built-in
- * names (too many to show at once), so they are searched: each result shows the names that give
- * that emoji. With no search it shows your changes: the names you added or switched off.
+ * Smart corrections → Emoji shows the switch, then the emoji names. Every emoji has several built-in
+ * names (too many to show at once), so they are searched, and each result shows the names that give
+ * that emoji. With no search it shows your changes, meaning the names you added or switched off.
  */
 
 /** How many search results are shown at once. */
@@ -183,7 +183,7 @@ private fun AllBuiltInNamesDialog(
     onDismiss: () -> Unit,
 ) {
     var onlyOff by remember { mutableStateOf(false) }
-    // about 5,300 rows: made off the main thread
+    // about 5,300 rows, made off the main thread
     val loaded by produceState<List<BuiltInNameRow>?>(null, changes, onlyOff) {
         value = withContext(Dispatchers.Default) { EmojiNames.builtInRows(index, changes, onlyOff) }
     }
@@ -244,7 +244,7 @@ private fun LoadingLine() = Text(
 
 private val EmojiNameList = UserSetting(name = R.string.emoji_names_header, appearsInSearch = false) {
     val context = LocalContext.current
-    // reading the emoji data and making every name's variants takes a moment: not on the main thread
+    // reading the emoji data and making every name's variants takes a moment, so not on the main thread
     val index by produceState<EmojiNameIndex?>(null) {
         value = withContext(Dispatchers.Default) { EmojiNameDefaults.get(context) }
     }
@@ -255,10 +255,10 @@ private val EmojiNameList = UserSetting(name = R.string.emoji_names_header, appe
 private fun EmojiNameListContent(index: EmojiNameIndex) {
     val (stored, setStored) = useDataStore(SMART_CORRECTIONS_EMOJI_LIST)
     val (builtIn, setBuiltIn) = useDataStore(SMART_CORRECTIONS_EMOJI_BUILT_IN)
-    // your changes: your own names, and built-in names you switched off (kept with the built-in names off);
+    // your changes (your own names, and built-in names you switched off, kept with the built-in names off),
     // a short list, read right away so a change always starts from the saved one
     val entries = remember(stored) { EmojiNames.parse(stored, index) }
-    // the map copies the ~9,000 built-in names: off the main thread
+    // the map copies the ~9,000 built-in names, so it is made off the main thread
     val names by produceState<Map<List<String>, String>>(emptyMap(), entries, builtIn) {
         value = withContext(Dispatchers.Default) { EmojiNames.nameMap(index, entries, builtIn) }
     }
@@ -344,7 +344,7 @@ private fun EmojiNameListContent(index: EmojiNameIndex) {
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
         )
         if (q.isEmpty()) {
-            // with no search: the names you added or switched off
+            // with no search, show the names you added or switched off
             if (entries.isEmpty()) Tip(stringResource(R.string.emoji_names_search_prompt))
             else Text(
                 stringResource(R.string.emoji_names_your_changes),

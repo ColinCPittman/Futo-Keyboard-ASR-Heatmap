@@ -13,7 +13,9 @@ import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.runBlocking
 import org.futo.inputmethod.latin.BuildConfig
 import org.futo.inputmethod.latin.R
+import org.futo.inputmethod.latin.uix.FeatureTips
 import org.futo.inputmethod.latin.uix.PlutoLinks
+import org.futo.inputmethod.latin.uix.SHOW_FEATURE_TIPS
 import org.futo.inputmethod.latin.uix.getSetting
 import org.futo.inputmethod.latin.uix.setSetting
 import org.futo.inputmethod.latin.uix.settings.NavigationItem
@@ -23,6 +25,7 @@ import org.futo.inputmethod.latin.uix.settings.UserSetting
 import org.futo.inputmethod.latin.uix.settings.UserSettingsMenu
 import org.futo.inputmethod.latin.uix.settings.userSettingDecorationOnly
 import org.futo.inputmethod.latin.uix.settings.userSettingNavigationItem
+import org.futo.inputmethod.latin.uix.settings.userSettingToggleDataStore
 import org.futo.inputmethod.updates.openURI
 
 internal fun Context.copyToClipboard(text: CharSequence, label: String = "Copied Text") {
@@ -35,6 +38,23 @@ val HelpMenu = UserSettingsMenu(
     title = R.string.help_menu_title,
     navPath = "help", registerNavPath = true,
     settings = listOf(
+        userSettingToggleDataStore(
+            title = R.string.feature_tips_setting,
+            subtitle = R.string.feature_tips_setting_subtitle,
+            setting = SHOW_FEATURE_TIPS,
+        ),
+        UserSetting(name = R.string.feature_tips_reset, subtitle = R.string.feature_tips_reset_subtitle) {
+            val context = LocalContext.current
+            NavigationItem(
+                title = stringResource(R.string.feature_tips_reset),
+                subtitle = stringResource(R.string.feature_tips_reset_subtitle),
+                style = NavigationItemStyle.MiscNoArrow,
+                navigate = {
+                    FeatureTips.reset(context)
+                    Toast.makeText(context, context.getString(R.string.feature_tips_reset_done), Toast.LENGTH_SHORT).show()
+                }
+            )
+        },
         UserSetting(
             name = R.string.help_menu_version_name
         ) {
@@ -89,7 +109,7 @@ val HelpMenu = UserSettingsMenu(
                 ))
         },
 
-        // Pluto Keyboard: feedback and bug reports go to the Pluto Keyboard project, not to FUTO
+        // Pluto Keyboard sends feedback and bug reports to the Pluto Keyboard project, not to FUTO
         // (FUTO's website, Discord, Zulip chat, issue tracker and email support the official app).
         userSettingNavigationItem(
             title = R.string.help_menu_pluto_report_issue,

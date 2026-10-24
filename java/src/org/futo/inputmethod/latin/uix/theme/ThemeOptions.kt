@@ -96,7 +96,7 @@ fun followSystemThemeOption(context: Context): ThemeOption {
     } ?: if(isLight) PlutoFrost else PlutoClassic
 }
 
-// Not listed in ThemeOptions: the picker shows it as a toggle instead of a tile
+// Not listed in ThemeOptions, because the picker shows it as a toggle instead of a tile
 val FollowSystemTheme = ThemeOption(
     dynamic = true,
     key = "FollowSystem",

@@ -34,7 +34,7 @@ class MoonshineStreamingSession(
     private val configuration: RecognitionEngineConfiguration.MoonshineStreaming,
     private val onPartial: suspend (String) -> Unit
 ) {
-    /** [segments]: the decoded utterances (between pauses) that [text] was joined from. */
+    /** [segments] are the decoded utterances (between pauses) that [text] was joined from. */
     data class Result(val text: String, val segments: List<String>, val stats: RecognitionStats)
 
     private val audio = Channel<FloatArray>(Channel.UNLIMITED)
@@ -68,7 +68,7 @@ class MoonshineStreamingSession(
         }
         this@MoonshineStreamingSession.vad = vad
 
-        val transcriber = MoonshineStreamingTranscriber(lease.model, vad)
+        val transcriber = MoonshineStreamingTranscriber(lease.model, vad, configuration.streaming)
         transcriber.start()
         this@MoonshineStreamingSession.transcriber = transcriber
 
@@ -94,7 +94,7 @@ class MoonshineStreamingSession(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Throwable) {
-                // Reported by finish(); never let inference errors crash the keyboard.
+                // Reported by finish(), and never let inference errors crash the keyboard.
                 Log.e(TAG, "Streaming update failed", e)
                 workerError = e
                 audio.close()
@@ -103,7 +103,7 @@ class MoonshineStreamingSession(
         synchronized(lock) {
             worker = job
             if (cancelled) {
-                // cancel() ran while we were loading; it couldn't see the worker.
+                // cancel() ran while we were loading, so it couldn't see the worker.
                 job.invokeOnCompletion { release() }
             }
         }
@@ -169,7 +169,7 @@ class MoonshineStreamingSession(
             w = worker
         }
         audio.close()
-        // Never close the model under a running inference: wait for the worker.
+        // Never close the model under a running inference, so wait for the worker.
         // Without a worker, start() is still loading and releases on its own.
         w?.invokeOnCompletion { release() }
     }

@@ -6,29 +6,29 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 /**
- * One of your changes on the "Emoji" page: a name of your own and the emoji it becomes, or
+ * One of your changes on the "Emoji" page, which is a name of your own and the emoji it becomes, or
  * (switched off) a built-in name that should give no emoji.
  */
 data class EmojiNickname(val phrase: String, val emoji: String, val enabled: Boolean = true)
 
-/** One emoji as the "Emoji" page shows it: its official name and the built-in names that give it, best first. */
+/** One emoji as the "Emoji" page shows it, with its official name and the built-in names that give it, best first. */
 data class EmojiInfo(val emoji: String, val official: String, val names: List<String>)
 
-/** One row of the list of every built-in name: an emoji's heading ([name] null), or one of its names, switched on or off. */
+/** One row of the list of every built-in name. It is an emoji's heading ([name] null) or one of its names, switched on or off. */
 data class BuiltInNameRow(val emoji: String, val official: String, val name: String?, val on: Boolean)
 
 /**
- * The built-in names ([EmojiNames.builtIn]): every spoken name -> its emoji, or "" for a name
+ * The built-in names ([EmojiNames.builtIn]), meaning every spoken name -> its emoji, or "" for a name
  * that fits several emoji (it gives none), and the emoji as the "Emoji" page lists them.
  */
 class EmojiNameIndex(val emojis: List<EmojiInfo>, val names: Map<List<String>, String>) {
-    /** For the page's search, made once: each emoji's names and their words in lower case. */
+    /** For the page's search (made once), each emoji's names and their words in lower case. */
     internal val searchable: List<EmojiNames.Searchable> by lazy { emojis.map { EmojiNames.searchable(it.emoji, it.names + it.official) } }
 }
 
 /**
- * Emoji by name: "<name> emoji" -> the emoji ("thumbs up emoji" -> 👍, "laughing emoji" -> 😂).
- * Every emoji answers to several names, made from the keyboard's emoji data: common nicknames
+ * Emoji by name. "<name> emoji" -> the emoji ("thumbs up emoji" -> 👍, "laughing emoji" -> 😂).
+ * Every emoji answers to several names, made from the keyboard's emoji data, namely common nicknames
  * ([NICKNAMES]), the official Unicode CLDR name, the gemoji aliases and tags, each also in plural,
  * in the other word order and without "face"/"with". Your own names (the "Emoji" page) come on top.
  */
@@ -293,7 +293,7 @@ object EmojiNames {
 
     /**
      * One-word built-in names that also talk about emoji in general or are everyday words before
-     * "emoji" ("I use emoji", "new emoji", "two emoji"): not names. Words of 1 or 2 letters
+     * "emoji" ("I use emoji", "new emoji", "two emoji") are not names. Words of 1 or 2 letters
      * (flag codes like "us", "it") aren't either, except these.
      */
     private val NOT_NAMES = setOf(
@@ -332,10 +332,10 @@ object EmojiNames {
     }
 
     /**
-     * The built-in names, from the keyboard's emoji data (gemoji JSON: "emoji", "description" =
+     * The built-in names, from the keyboard's emoji data (gemoji JSON with "emoji", "description" =
      * the CLDR name, "aliases", "tags") and [NICKNAMES]. When several emoji share a name, the
-     * best source wins: nicknames, then official names, aliases and tags, each before its
-     * shorter/plural/reordered versions; a name two emoji share at the same level gives none.
+     * best source wins (nicknames, then official names, aliases and tags, each before its
+     * shorter/plural/reordered versions), and a name two emoji share at the same level gives none.
      */
     fun builtIn(gemojiJson: String): EmojiNameIndex {
         val items = Json.parseToJsonElement(gemojiJson) as? JsonArray ?: return EmojiNameIndex(emptyList(), emptyMap())
@@ -357,10 +357,10 @@ object EmojiNames {
             nicknames[raw.emoji] = line.substring(sp + 1).split(',').map { it.trim() }.filter { it.isNotEmpty() }
         }
 
-        // the same word strings for every name (less memory: the names share their words)
+        // the same word strings for every name (less memory because the names share their words)
         val pool = HashMap<String, String>()
         fun words(phrase: String) = VoiceCommands.phraseWords(phrase).map { pool.getOrPut(it) { it } }
-        // name -> (best rank, the emoji at that rank); even ranks are names as written, odd ones their variants
+        // name -> (best rank, the emoji at that rank), where even ranks are names as written and odd ones their variants
         val best = HashMap<List<String>, Pair<Int, MutableSet<String>>>()
         fun add(words: List<String>, emoji: String, rank: Int) {
             if (words.size !in 1..MAX_WORDS || isNotName(words)) return
@@ -370,7 +370,7 @@ object EmojiNames {
                 rank == cur.first -> cur.second.add(emoji)
             }
         }
-        // in order of their rank: (rank, emoji, phrase as written)
+        // in order of their rank, as (rank, emoji, phrase as written)
         val exact = ArrayList<Triple<Int, String, String>>()
         for (r in raws) {
             nicknames[r.emoji]?.forEach { exact.add(Triple(0, r.emoji, it)) }
@@ -389,7 +389,7 @@ object EmojiNames {
                 // "flag: Vietnam" -> "Vietnam flag"
                 if (w.size >= 2 && w[0] == "flag") variants.add(w.drop(1) + w[0])
             }
-            // the other word order of two words: "laughing crying", "heart red"
+            // the other word order of two words ("laughing crying", "heart red")
             if (rank == 2 || rank == 4) for (v in listOf(w) + variants) if (v.size == 2) variants.add(listOf(v[1], v[0]))
             for (v in variants.toList()) otherNumber(v)?.let { variants.add(it) }
             otherNumber(w)?.let { variants.add(it) }
@@ -398,7 +398,7 @@ object EmojiNames {
         val names = HashMap<List<String>, String>(best.size * 2)
         for ((w, p) in best) names[w] = if (p.second.size == 1) p.second.first() else ""
 
-        // for the page: each emoji's names as written that give it
+        // for the page, each emoji's names as written that give it
         val shown = HashMap<String, LinkedHashMap<List<String>, String>>()
         for ((_, emoji, phrase) in exact.sortedBy { it.first }) {
             val w = VoiceCommands.phraseWords(phrase)
@@ -411,27 +411,27 @@ object EmojiNames {
     /** "emoji" as the voice model writes it. */
     private val EMOJI_WORDS = setOf("emoji", "emojis", "emojie", "emojies", "emojii")
 
-    /** "emoji" misheard as two words: "a moji", "at Mojie". */
+    /** "emoji" misheard as two words ("a moji", "at Mojie"). */
     private val MOJI_WORDS = setOf("moji", "mojis", "mojie", "mojies", "mojee")
     private val MOJI_BEFORE = setOf("a", "at", "e")
 
-    /** How many of the words ending at [k] say "emoji" (0: they don't). */
+    /** How many of the words ending at [k] say "emoji" (0 means they don't). */
     fun keywordLength(norm: List<String>, k: Int): Int = when {
         norm[k] in EMOJI_WORDS -> 1
         k >= 1 && norm[k] in MOJI_WORDS && norm[k - 1] in MOJI_BEFORE -> 2
         else -> 0
     }
 
-    /** Whether [phrase] can be a name: 1 to [MAX_WORDS] words. */
+    /** Whether [phrase] can be a name (1 to [MAX_WORDS] words). */
     fun isValidName(phrase: String): Boolean = VoiceCommands.phraseWords(phrase).size in 1..MAX_WORDS
 
-    /** Whether [emoji] can be an entry's emoji: a few characters, not plain text (no letters or spaces). */
+    /** Whether [emoji] can be an entry's emoji (a few characters, not plain text, so no letters or spaces). */
     fun isValidEmoji(emoji: String): Boolean {
         val e = emoji.trim()
         return e.isNotEmpty() && e.length <= 32 && e.any { it.code > 0x7F } && e.none { it.isLetter() || it.isWhitespace() }
     }
 
-    /** One entry per line: `phrase<TAB>emoji`, plus `<TAB>0` when it is switched off. */
+    /** One entry per line, as `phrase<TAB>emoji`, plus `<TAB>0` when it is switched off. */
     fun serialize(entries: List<EmojiNickname>): String =
         entries.joinToString("\n") {
             // the name as written ("flag: Vietnam"), so the list still shows it that way
@@ -439,8 +439,8 @@ object EmojiNames {
         }
 
     /**
-     * Your changes, from [serialize]'s format (blank: none). Invalid or repeated names are skipped.
-     * Lists saved before the built-in names grew held every official name: those are read as
+     * Your changes, from [serialize]'s format (blank means none). Invalid or repeated names are skipped.
+     * Lists saved before the built-in names grew held every official name, and those are read as
      * your changes only (an official name left out of such a list was deleted, so it is off).
      */
     fun parse(text: String, index: EmojiNameIndex? = null): List<EmojiNickname> {
@@ -459,7 +459,7 @@ object EmojiNames {
         val official = index.emojis.associate { bare(it.emoji) to VoiceCommands.phraseWords(it.official) }
         fun isOfficial(e: EmojiNickname) = official[bare(e.emoji)] == VoiceCommands.phraseWords(e.phrase)
         if (out.count { isOfficial(it) } < index.emojis.size / 2) return out
-        // names two emoji share ("keycap: #", "keycap: *") were never in such a list: not deleted
+        // names two emoji share ("keycap: #", "keycap: *") were never in such a list, so they are not deleted
         val shared = index.emojis.groupingBy { VoiceCommands.phraseWords(it.official) }.eachCount()
         val deleted = index.emojis
             .filter { VoiceCommands.phraseWords(it.official).let { w -> w !in seen && shared[w] == 1 } }
@@ -468,8 +468,8 @@ object EmojiNames {
     }
 
     /**
-     * The name words -> emoji map the rules use: the built-in names with your changes ("" = no
-     * emoji). With [builtIn] off, only your own names give emoji; your changes are kept as they are.
+     * The name words -> emoji map the rules use, made of the built-in names with your changes ("" = no
+     * emoji). With [builtIn] off, only your own names give emoji, and your changes are kept as they are.
      */
     fun nameMap(index: EmojiNameIndex, changes: List<EmojiNickname>, builtIn: Boolean = true): Map<List<String>, String> {
         if (!builtIn) {
@@ -488,8 +488,8 @@ object EmojiNames {
         index.emojis.sumOf { it.names.size } to index.emojis.count { it.names.isNotEmpty() }
 
     /**
-     * The list of every built-in name, by emoji: a heading row, then each name, off when you
-     * switched it off. [onlyOff]: only the switched-off names (and their emoji's heading).
+     * The list of every built-in name, by emoji, with a heading row, then each name, off when you
+     * switched it off. With [onlyOff], only the switched-off names (and their emoji's heading).
      */
     fun builtInRows(index: EmojiNameIndex, changes: List<EmojiNickname>, onlyOff: Boolean = false): List<BuiltInNameRow> {
         val off = changes.filter { !it.enabled }.mapTo(HashSet()) { VoiceCommands.phraseWords(it.phrase) }
@@ -503,19 +503,19 @@ object EmojiNames {
         return out
     }
 
-    /** What "<[phrase]> emoji" gives with [names]: the emoji, "" for none (several fit, or switched off), or null (not a name). */
+    /** What "<[phrase]> emoji" gives with [names]. It is the emoji, "" for none (several fit, or switched off), or null (not a name). */
     fun lookup(names: Map<List<String>, String>, phrase: String): String? = names[VoiceCommands.phraseWords(phrase)]
 
     /**
-     * The "Emoji" page's search: the emoji that [query] (a word, a name or an emoji) finds, best
-     * first: the one "<query> emoji" gives, then names that start with it, then names that contain it.
+     * The "Emoji" page's search. It gives the emoji that [query] (a word, a name or an emoji) finds, best
+     * first (the one "<query> emoji" gives, then names that start with it, then names that contain it).
      */
     fun search(index: EmojiNameIndex, changes: List<EmojiNickname>, names: Map<List<String>, String>, query: String): List<EmojiInfo> {
         val q = query.trim().lowercase()
         if (q.isEmpty()) return emptyList()
         val qBare = bare(query.trim())
         val said = names[VoiceCommands.phraseWords(q)]?.takeIf { it.isNotEmpty() }?.let { bare(it) }
-        // your own names: a few, made searchable per search
+        // your own names (a few, made searchable per search)
         val mine = changes.filter { it.enabled }.groupBy({ bare(it.emoji) }, { it.phrase }).mapValues { (b, n) -> searchable(b, n) }
         val scored = ArrayList<Pair<Int, EmojiInfo>>()
         for ((i, info) in index.emojis.withIndex()) {
@@ -528,7 +528,7 @@ object EmojiNames {
 
     /** An emoji's names in lower case, and their words, for [search]. */
     internal class Searchable(val bare: String, val lower: Array<String>, val words: Array<String>) {
-        /** 1: a name is [q]; 2: a name starts with it; 3: a word does; 4: a name contains it; 5: none. */
+        /** Scores 1 if a name is [q], 2 if a name starts with it, 3 if a word does, 4 if a name contains it, and 5 for none. */
         fun score(q: String): Int = when {
             lower.any { it == q } -> 1
             lower.any { it.startsWith(q) } -> 2

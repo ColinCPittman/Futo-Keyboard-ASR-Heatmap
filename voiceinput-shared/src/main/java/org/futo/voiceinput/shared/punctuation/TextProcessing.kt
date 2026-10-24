@@ -17,7 +17,7 @@ internal class AsrWord(
     val segmentStart: Boolean = false,
 ) {
     /**
-     * "Mixed case": has an uppercase letter anywhere but position 0 (iPhone, NASA, McDonald), or is a dotted
+     * "Mixed case" means having an uppercase letter anywhere but position 0 (iPhone, NASA, McDonald), or being a dotted
      * abbreviation (p.m., e.g., U.S). Such words keep the ASR's casing.
      */
     val mixedCase: Boolean = core.codePoints().skip(1).anyMatch { Character.isUpperCase(it) } ||
@@ -98,7 +98,7 @@ internal object TextProcessing {
             val removedLeading = t.substring(0, s)
             t = t.substring(s)
             if (t.isEmpty() || t.all { it in CLOSERS }) {
-                // Token made only of punctuation (e.g. a lone "." or a lone quote): not a word.
+                // Token made only of punctuation (e.g. a lone "." or a lone quote), so not a word.
                 // Attach quotes to the previous word and pass the terminator on to it.
                 val prev = out.lastOrNull()
                 val term = terminal(removedTrailing + removedLeading)
@@ -122,7 +122,7 @@ internal object TextProcessing {
         else -> null
     }
 
-    /** Joins everything. [marks] hold "", ",", ".", "?", "!" or ":" per word; [boundary] marks sentence ends. */
+    /** Joins everything. [marks] hold "", ",", ".", "?", "!" or ":" per word, and [boundary] marks sentence ends. */
     fun assemble(
         words: List<AsrWord>,
         cased: Array<String>,
@@ -144,9 +144,9 @@ internal object TextProcessing {
                 if (mark != "?" && mark != "!") mark = "."
             }
             if (last && mark != "." && mark != "?" && mark != "!") { mark = "."; isBoundary = true }
-            // The ASR heard the audio: its "?" / "!" reflect intonation, which a text-only punctuation model
+            // The ASR heard the audio, so its "?" / "!" reflect intonation, which a text-only punctuation model
             // can't know ("...at the clubhouse, right? And bowls..."). Keep them as sentence ends.
-            // ... except a "?" on a lone connective ("with his condition, | And? | Gets a little impatient"):
+            // ... except a "?" on a lone connective ("with his condition, | And? | Gets a little impatient"), because
             // that is a pause, not a question, so the model decides
             val pauseQuestion = w.asrTerminal == '?' &&
                 w.core.trimEnd { it in CLOSERS || it == '?' }.lowercase(Locale.ROOT) in PAUSE_WORDS
@@ -179,7 +179,7 @@ internal object TextProcessing {
         "LinkedIn", "TikTok", "WhatsApp", "JavaScript", "PowerPoint", "McDonald", "McDonald's",
     )
 
-    /** [w] is all lower case, Capitalized, ALL CAPS or a known mixed-case form ("iPhone"); not subword casing ("eTA"). */
+    /** [w] is all lower case, Capitalized, ALL CAPS or a known mixed-case form ("iPhone"), but not subword casing ("eTA"). */
     fun wholeWordCase(w: String): Boolean {
         val letters = w.filter { it.isLetter() }
         if (letters.length < 2) return true

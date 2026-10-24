@@ -250,7 +250,7 @@ object SettingsExporter {
             zipOut.closeEntry()
         }
 
-        // Collect the typing heatmap (learned tap positions); absent when nothing was learned
+        // Collect the typing heatmap (learned tap positions), and absent when nothing was learned
         TypingHeatmap.exportJson(context)?.let { heatmapJson ->
             zipOut.putNextEntry(ZipEntry(typingHeatmapFileName))
             zipOut.write(heatmapJson.encodeUtf8().toByteArray())

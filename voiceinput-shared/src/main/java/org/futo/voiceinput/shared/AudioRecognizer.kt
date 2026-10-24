@@ -89,14 +89,20 @@ data class RecordingSettings(
     val preferBluetoothMic: Boolean,
     val requestAudioFocus: Boolean,
     val canExpandSpace: Boolean,
-    val useVADAutoStop: Boolean
-)
+    val useVADAutoStop: Boolean,
+    /** With [useVADAutoStop], how long a silence after speech stops recording. */
+    val autoStopSilenceMs: Int = DEFAULT_AUTO_STOP_SILENCE_MS
+) {
+    companion object {
+        const val DEFAULT_AUTO_STOP_SILENCE_MS = 2000
+    }
+}
 
 data class AudioRecognizerSettings(
     val modelRunConfiguration: MultiModelRunConfiguration,
     val decodingConfiguration: DecodingConfiguration,
     val recordingConfiguration: RecordingSettings,
-    /** Engine to use; whisper (modelRunConfiguration) unless configured otherwise. */
+    /** Engine to use, which is whisper (modelRunConfiguration) unless configured otherwise. */
     val engine: RecognitionEngineConfiguration = RecognitionEngineConfiguration.Whisper,
     /** Applied to the final transcript before [AudioRecognizerListener.finished]. */
     val postProcessor: TranscriptPostProcessor = TranscriptPostProcessor.Identity
@@ -114,7 +120,7 @@ class AudioRecognizer(
     private var isRecording = false
 
     // Streaming engines keep the microphone open a moment after stop is pressed (until this many
-    // samples are recorded), so the end of the last word isn't cut off. 0: stop at once.
+    // samples are recorded), so the end of the last word isn't cut off. 0 means stop at once.
     @Volatile private var recordUntilSample = 0L
     @Volatile private var recordedSamples = 0L
     private var recorder: AudioRecord? = null
@@ -128,6 +134,8 @@ class AudioRecognizer(
 
     private val canExpandSpace = settings.recordingConfiguration.canExpandSpace
     private val useVAD = settings.recordingConfiguration.useVADAutoStop
+    // The auto-stop VAD judges 30 ms frames (480 samples).
+    private val autoStopSilenceFrames = settings.recordingConfiguration.autoStopSilenceMs / 30
 
     private var floatSamples: FloatBuffer = FloatBuffer.allocate(16000 * 30)
     private var recorderJob: Job? = null
@@ -186,7 +194,7 @@ class AudioRecognizer(
     }
 
     /**
-     * One AudioManager for the whole process: Android keys a communication-device request to the
+     * One AudioManager for the whole process, because Android keys a communication-device request to the
      * AudioManager instance that made it, so a clear through another instance (another Context)
      * leaves the route in place, and other apps' audio (read aloud, media) goes to the earpiece.
      */
@@ -195,7 +203,7 @@ class AudioRecognizer(
 
     /**
      * Routes recording through a Bluetooth headset mic when the user prefers one and it is there.
-     * Otherwise no communication device is set at all: the VOICE_RECOGNITION source records from
+     * Otherwise no communication device is set at all, since the VOICE_RECOGNITION source records from
      * the phone's own mic without one, and the old fallback (the first non-Bluetooth device, i.e.
      * the earpiece) only redirected other apps' audio.
      */
@@ -401,7 +409,7 @@ class AudioRecognizer(
             if (nRead <= 0) break
             yield()
             if (!isRecording) {
-                // after stop: only the last moment of audio, no more checks or level updates
+                // after stop there is only the last moment of audio, no more checks or level updates
                 storeSamples(nRead)
                 continue
             }
@@ -409,7 +417,7 @@ class AudioRecognizer(
             var isRunningOutOfSpace = !isStreamingEngine &&
                     (floatSamples.remaining() < nRead.coerceAtLeast(1600)) && !expandSpaceIfAllowed()
 
-            val hasNotTalkedRecently = hasTalked && (numConsecutiveNonSpeech > 66) && useVAD
+            val hasNotTalkedRecently = hasTalked && (numConsecutiveNonSpeech > autoStopSilenceFrames) && useVAD
             if (isRunningOutOfSpace || hasNotTalkedRecently) {
                 yield()
                 withContext(Dispatchers.Main) {
@@ -720,7 +728,7 @@ class AudioRecognizer(
 
         val job = recorderJob
         val keepTail = isStreamingEngine && job != null && job.isActive
-        // Record the last moment too (the end of the last word); set before isRecording turns off.
+        // Record the last moment too (the end of the last word), and set before isRecording turns off.
         if (keepTail) recordUntilSample = recordedSamples + STOP_TAIL_SAMPLES
         isRecording = false
         if (keepTail && job != null) {
@@ -739,7 +747,7 @@ class AudioRecognizer(
         }
         job?.cancel()
         recorder?.stop()
-        // The microphone is done: release the call-style audio route and audio focus now, not
+        // The microphone is done, so release the call-style audio route and audio focus now, not
         // only when the voice window closes. A route left behind sends other apps' audio (read
         // aloud, media) to the earpiece.
         clearCommunicationDevice()

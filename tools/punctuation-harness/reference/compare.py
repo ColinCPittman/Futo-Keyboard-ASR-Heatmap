@@ -56,7 +56,7 @@ for n, (i, r, k) in enumerate(zip(inp, ref, kt), 1):
         elif am != bm and not (idx == len(rw) - 1 and am == "" and bm == "."):
             punct_bad += 1; diffs.append(f"punct@{idx} {a!r}: ref={am!r} kt={bm!r}")
         if "<unk>" in a.lower():
-            # the Python package prints characters unknown to the tokenizer as "<unk>"; Kotlin keeps the original characters
+            # the Python package prints characters unknown to the tokenizer as "<unk>", but Kotlin keeps the original characters
             pat = re.escape(a.lower()).replace(re.escape("<unk>"), ".+")
             if re.fullmatch(pat, b.lower()):
                 unk_words += 1

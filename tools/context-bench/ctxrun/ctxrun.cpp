@@ -1,21 +1,21 @@
-// ctxrun: tiny benchmark runner for the voice-input "context model" stage.
+// ctxrun is a tiny benchmark runner for the voice-input "context model" stage.
 //
-// Mirrors what the app would do: load a GGUF once, decode a fixed prompt
-// prefix (system prompt + few-shot examples) once and snapshot its state, then
-// for every transcript restore the snapshot, decode only the per-item suffix,
-// and greedily generate the corrected text.
+// Mirrors what the app would do. It loads a GGUF once, decodes a fixed prompt
+// prefix (system prompt + few-shot examples) once and snapshots its state, then
+// for every transcript restores the snapshot, decodes only the per-item suffix,
+// and greedily generates the corrected text.
 //
-// Input JSON (-f): {"prefix": "...", "items": [{"id": "x", "suffix": "...", "max_tokens": 80}, ...]}
-// Output: one JSON object per line on stdout (header, one per item, summary).
+// Input JSON (-f) looks like {"prefix": "...", "items": [{"id": "x", "suffix": "...", "max_tokens": 80}, ...]}
+// Output is one JSON object per line on stdout (header, one per item, summary).
 //
 // Usage: ctxrun -m model.gguf -f prompts.json [-t threads] [--cpus 6,7] [-c n_ctx]
 //               [--no-prefix-cache] [--repeat N] [--spec N]
 //
-// --spec N: "copy speculation". The corrected text is almost identical to the input, so
+// --spec N is "copy speculation". The corrected text is almost identical to the input, so
 // the item's "draft" (the input transcript) is used as a free draft: after each token the
 // next N draft tokens are verified in one batch (prefill speed instead of generation
 // speed) and the longest prefix that matches the greedy choice is accepted. Output is
-// bit-identical to plain greedy decoding. Needs partial KV removal (transformer models;
+// bit-identical to plain greedy decoding. Needs partial KV removal (transformer models only, since
 // recurrent/hybrid models fall back to plain decoding).
 
 #include "llama.h"
@@ -69,7 +69,7 @@ static std::vector<llama_token> tokenize(const llama_vocab * vocab, const std::s
     return out;
 }
 
-// Decode tokens starting at pos; only the last token produces logits. Splits into n_batch chunks.
+// Decode tokens starting at pos (only the last token produces logits), split into n_batch chunks.
 static bool decode(llama_context * ctx, llama_batch_ext * batch, const std::vector<llama_token> & toks, int pos, int n_batch) {
     for (size_t i = 0; i < toks.size(); i += n_batch) {
         size_t n = std::min(toks.size() - i, (size_t) n_batch);
@@ -86,15 +86,15 @@ static bool decode(llama_context * ctx, llama_batch_ext * batch, const std::vect
 }
 
 // ---------------------------------------------------------------------------
-// Scoring server (--score): the LM is used as a judge instead of a generator.
+// Scoring server (--score), where the LM is used as a judge instead of a generator.
 // Reads one JSON request per stdin line:
 //   {"prefix": "...", "variants": ["text0", "text1", ...], "alts": ["?", "."], "detail": true}
 // and writes {"variants": [{"lp": total log-prob, ...}], "ms": ..., "decoded": n}.
 //
-// "detail" requests (one variant: the full transcript) decode the text into sequence 0
+// "detail" requests (one variant, the full transcript) decode the text into sequence 0
 // and return per-token pieces/log-probs plus, for every position, the log-prob of each
 // "alts" token there (e.g. "?" vs "." vs ","). Sequence 0 is then kept as the base.
-// Other requests score variants that share a prefix with the base: each variant gets
+// Other requests score variants that share a prefix with the base, and each variant gets
 // its own sequence (KV cells of the shared part are copied, not recomputed) and all
 // variant tails are decoded together in ONE batch. Variants identical to a prefix of
 // the base cost nothing (their log-probs are already known).
@@ -195,7 +195,7 @@ static int run_score(llama_context * ctx, llama_batch_ext * batch, const llama_v
                 }
                 probe_where.push_back({ti, cnt});
             }
-            // Reuse the part shared with the previous base (streaming: the earlier sentences);
+            // Reuse the part shared with the previous base (streaming, so the earlier sentences);
             // only tokens from the first difference on are decoded. Probes are only
             // evaluated at re-decoded positions.
             int L = 0;
@@ -261,7 +261,7 @@ static int run_score(llama_context * ctx, llama_batch_ext * batch, const llama_v
                     json one = json::array();
                     if (pw.first >= 0) {
                         for (int q = 0; q < pw.second; q++) one.push_back(probe_lp[pw.first][used[pw.first]++]);
-                        one.push_back(lp[pw.first]);  // last entry: the original token
+                        one.push_back(lp[pw.first]);  // the last entry is the original token
                     }
                     probes[pi++] = one;
                 }
@@ -286,7 +286,7 @@ static int run_score(llama_context * ctx, llama_batch_ext * batch, const llama_v
                 vars.push_back(std::move(v));
             }
             if (recurrent) {
-                // no cheap KV branching: decode each variant from the prefix snapshot
+                // no cheap KV branching, so decode each variant from the prefix snapshot
                 for (auto & v : vars) {
                     const int n = (int) v.toks.size();
                     if (v.start >= n) continue;
@@ -315,8 +315,8 @@ static int run_score(llama_context * ctx, llama_batch_ext * batch, const llama_v
                 }
                 base.clear(); base_lp.clear();  // seq 0 no longer holds the base
             } else {
-                // Each variant re-decodes from token start-1 (its logits predict token start);
-                // the KV cells before that are shared with seq 0.
+                // Each variant re-decodes from token start-1 (its logits predict token start),
+                // and the KV cells before that are shared with seq 0.
                 int next_seq = 1;
                 struct Out { int var; int tok; };  // batch index -> which log-prob it fills
                 std::vector<Out> outs;
@@ -351,7 +351,7 @@ static int run_score(llama_context * ctx, llama_batch_ext * batch, const llama_v
                     if (n - from + in_batch > n_batch && !flush()) return 1;
                     if (next_seq >= n_seq_max) { if (!flush()) return 1; }
                     if (next_seq >= n_seq_max) {
-                        // out of sequences: recycle
+                        // out of sequences, so recycle
                         for (int s = 1; s < n_seq_max; s++) llama_memory_seq_rm(mem, s, -1, -1);
                         next_seq = 1;
                     }
@@ -471,7 +471,7 @@ int main(int argc, char ** argv) {
         return rc;
     }
 
-    // Prefix: decode once, snapshot state.
+    // Prefix: decode once and snapshot state.
     const std::string prefix = input.value("prefix", "");
     std::vector<llama_token> prefix_toks = tokenize(vocab, prefix, true);
     std::vector<uint8_t> snapshot;

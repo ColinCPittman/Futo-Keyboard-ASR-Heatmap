@@ -75,7 +75,7 @@ val ANIMATE_BUBBLE = SettingsKey(
     default = true
 )
 
-/** Speech recognition engine for built-in voice input: [VOICE_ENGINE_WHISPER] or [VOICE_ENGINE_MOONSHINE]. */
+/** Speech recognition engine for built-in voice input, either [VOICE_ENGINE_WHISPER] or [VOICE_ENGINE_MOONSHINE]. */
 val VOICE_INPUT_ENGINE = SettingsKey(
     key = stringPreferencesKey("voice_input_engine"),
     default = VOICE_ENGINE_WHISPER
@@ -84,22 +84,40 @@ val VOICE_INPUT_ENGINE = SettingsKey(
 const val VOICE_ENGINE_WHISPER = "whisper"
 const val VOICE_ENGINE_MOONSHINE = "moonshine"
 
-/** Id of the selected `moonshine-streaming` model package; empty = first installed one. */
+/** Id of the selected `moonshine-streaming` model package (empty = first installed one). */
 val MOONSHINE_MODEL_ID = SettingsKey(
     key = stringPreferencesKey("moonshine_model_id"),
     default = ""
 )
 
-/** ONNX Runtime execution provider for Moonshine: name of an OrtAccelerator (CPU, XNNPACK, NNAPI). */
+/** ONNX Runtime execution provider for Moonshine, the name of an OrtAccelerator (CPU, XNNPACK, NNAPI). */
 val MOONSHINE_ACCELERATOR = SettingsKey(
     key = stringPreferencesKey("moonshine_accelerator"),
     default = "CPU"
 )
 
-/** Moonshine CPU threads; 0 = automatic. */
+/** Moonshine CPU threads (0 = automatic). */
 val MOONSHINE_THREADS = SettingsKey(
     key = intPreferencesKey("moonshine_threads"),
     default = 0
+)
+
+/** Moonshine shows the words while speaking (off means each phrase appears once you pause, which uses less battery). */
+val MOONSHINE_LIVE_TEXT = SettingsKey(
+    key = booleanPreferencesKey("moonshine_live_text"),
+    default = true
+)
+
+/** Moonshine's setting for how often the live text is refreshed, in ms of new audio. */
+val MOONSHINE_REFRESH_MS = SettingsKey(
+    key = intPreferencesKey("moonshine_refresh_ms"),
+    default = 500
+)
+
+/** Moonshine, with [USE_VAD_AUTOSTOP], decides how long a silence after speech ends the dictation, in ms. */
+val MOONSHINE_AUTO_STOP_MS = SettingsKey(
+    key = intPreferencesKey("moonshine_auto_stop_ms"),
+    default = 2000
 )
 
 /** Show audio length / processing time / RTF / accelerator after each Moonshine transcription. */
@@ -120,7 +138,7 @@ val PUNCTUATION_RESTORATION_ENABLED = SettingsKey(
     default = false
 )
 
-/** Id of the selected `punctuation` model package; empty = first installed one. */
+/** Id of the selected `punctuation` model package (empty = first installed one). */
 val PUNCTUATION_MODEL_ID = SettingsKey(
     key = stringPreferencesKey("punctuation_model_id"),
     default = ""
@@ -132,16 +150,16 @@ val CONTEXT_MODEL_ENABLED = SettingsKey(
     default = false
 )
 
-/** Id of the selected `context` model package; empty = first installed one. */
+/** Id of the selected `context` model package (empty = first installed one). */
 val CONTEXT_MODEL_ID = SettingsKey(
     key = stringPreferencesKey("context_model_id"),
     default = ""
 )
 
-// Smart corrections options (the "Smart corrections" page under Voice Input); see
+// Smart corrections options (the "Smart corrections" page under Voice Input), see
 // org.futo.voiceinput.shared.context.SmartCorrectionOptions
 
-/** Misheard words: sound-alike words ("bulls" -> "bowls") and word boundaries ("in to" -> "into"). */
+/** Misheard words, meaning sound-alike words ("bulls" -> "bowls") and word boundaries ("in to" -> "into"). */
 val SMART_CORRECTIONS_SOUND_ALIKE = SettingsKey(
     key = booleanPreferencesKey("smart_corrections_sound_alike"),
     default = true
@@ -179,7 +197,7 @@ val SMART_CORRECTIONS_SELF_CORRECTIONS = SettingsKey(
 
 /**
  * The user's voice commands, one per line as `ACTION<TAB>phrase`
- * (org.futo.voiceinput.shared.context.VoiceCommands); empty = the built-in list.
+ * (org.futo.voiceinput.shared.context.VoiceCommands), and empty means the built-in list.
  */
 val SMART_CORRECTIONS_COMMAND_LIST = SettingsKey(
     key = stringPreferencesKey("smart_corrections_command_list"),
@@ -187,77 +205,93 @@ val SMART_CORRECTIONS_COMMAND_LIST = SettingsKey(
 )
 
 /**
- * Your changes to the self-correction phrases ("I mean", "no wait"): your own phrases and built-in
+ * Your changes to the self-correction phrases ("I mean", "no wait"), which are your own phrases and built-in
  * ones you switched off, one per line, a switched-off one ending in a tab and "0"
- * (org.futo.voiceinput.shared.context.CorrectionPhrases); empty = no changes.
+ * (org.futo.voiceinput.shared.context.CorrectionPhrases). Empty means no changes.
  */
 val SMART_CORRECTIONS_CORRECTION_PHRASES = SettingsKey(
     key = stringPreferencesKey("smart_corrections_correction_phrases"),
     default = ""
 )
 
-/** Whether the built-in self-correction phrases count; off: only your own do (your list is kept). */
+/** Whether the built-in self-correction phrases count (off means only your own do, and your list is kept). */
 val SMART_CORRECTIONS_CORRECTION_PHRASES_BUILT_IN = SettingsKey(
     key = booleanPreferencesKey("smart_corrections_correction_phrases_built_in"),
     default = true
 )
 
 /**
- * Your changes to the filler words ("um", "uh"): your own and built-in ones you switched off, one
- * per line, a switched-off one ending in a tab and "0" (org.futo.voiceinput.shared.context.FillerWords);
- * empty = no changes.
+ * Your changes to the filler words ("um", "uh"), meaning your own and built-in ones you switched off, one
+ * per line, a switched-off one ending in a tab and "0" (org.futo.voiceinput.shared.context.FillerWords).
+ * Empty means no changes.
  */
 val SMART_CORRECTIONS_FILLER_LIST = SettingsKey(
     key = stringPreferencesKey("smart_corrections_filler_list"),
     default = ""
 )
 
-/** Whether the built-in filler words are removed; off: only your own are (your list is kept). */
+/** Whether the built-in filler words are removed (off means only your own are, and your list is kept). */
 val SMART_CORRECTIONS_FILLER_BUILT_IN = SettingsKey(
     key = booleanPreferencesKey("smart_corrections_filler_built_in"),
     default = true
 )
 
-/** Quoted speech: `I was like um what are you doing` -> `I was like "Um, what are you doing?"`. */
+/** Quoted speech, as in `I was like um what are you doing` -> `I was like "Um, what are you doing?"`. */
 val SMART_CORRECTIONS_QUOTES = SettingsKey(
     key = booleanPreferencesKey("smart_corrections_quotes"),
     default = true
 )
 
 /**
- * Your changes to the phrases that introduce quoted speech ("said", "was like"): your own and
+ * Your changes to the phrases that introduce quoted speech ("said", "was like"), meaning your own and
  * built-in ones you switched off, one per line, a switched-off one ending in a tab and "0"
- * (org.futo.voiceinput.shared.context.QuoteTriggers); empty = no changes.
+ * (org.futo.voiceinput.shared.context.QuoteTriggers). Empty means no changes.
  */
 val SMART_CORRECTIONS_QUOTE_TRIGGERS = SettingsKey(
     key = stringPreferencesKey("smart_corrections_quote_triggers"),
     default = ""
 )
 
-/** Whether the built-in quote phrases count; off: only your own do (your list is kept). */
+/** Whether the built-in quote phrases count (off means only your own do, and your list is kept). */
 val SMART_CORRECTIONS_QUOTE_TRIGGERS_BUILT_IN = SettingsKey(
     key = booleanPreferencesKey("smart_corrections_quote_triggers_built_in"),
     default = true
 )
 
-/** Emoji by name: `thumbs up emoji` -> 👍. */
+/** Emoji by name, as in `thumbs up emoji` -> 👍. */
 val SMART_CORRECTIONS_EMOJI = SettingsKey(
     key = booleanPreferencesKey("smart_corrections_emoji"),
     default = true
 )
 
 /**
- * Your changes to the emoji names: your own names ("lol" -> 😂), one per line as name, tab, emoji, and
+ * Your changes to the emoji names, meaning your own names ("lol" -> 😂), one per line as name, tab, emoji, and
  * built-in names you switched off, ending
- * in a tab and "0" (org.futo.voiceinput.shared.context.EmojiNames); empty = only the built-in names.
+ * in a tab and "0" (org.futo.voiceinput.shared.context.EmojiNames). Empty means only the built-in names.
  */
 val SMART_CORRECTIONS_EMOJI_LIST = SettingsKey(
     key = stringPreferencesKey("smart_corrections_emoji_list"),
     default = ""
 )
 
-/** Whether the built-in emoji names give emoji; off: only your own names do (your list is kept). */
+/** Whether the built-in emoji names give emoji (off means only your own names do, and your list is kept). */
 val SMART_CORRECTIONS_EMOJI_BUILT_IN = SettingsKey(
     key = booleanPreferencesKey("smart_corrections_emoji_built_in"),
     default = true
 )
+
+/** How readily each Smart corrections option changes the text, from -2 (fewest changes) to 2 (most), and 0 is the default. */
+private fun smartCorrectionsSensitivity(option: String) = SettingsKey(
+    key = intPreferencesKey("smart_corrections_sensitivity_$option"),
+    default = 0
+)
+
+val SMART_CORRECTIONS_SENSITIVITY_SOUND_ALIKE = smartCorrectionsSensitivity("sound_alike")
+val SMART_CORRECTIONS_SENSITIVITY_NAMES = smartCorrectionsSensitivity("names")
+val SMART_CORRECTIONS_SENSITIVITY_QUESTIONS = smartCorrectionsSensitivity("questions")
+val SMART_CORRECTIONS_SENSITIVITY_NUMBERS = smartCorrectionsSensitivity("numbers")
+val SMART_CORRECTIONS_SENSITIVITY_COMMANDS = smartCorrectionsSensitivity("commands")
+val SMART_CORRECTIONS_SENSITIVITY_FILLERS = smartCorrectionsSensitivity("fillers")
+val SMART_CORRECTIONS_SENSITIVITY_SELF_CORRECTIONS = smartCorrectionsSensitivity("self_corrections")
+val SMART_CORRECTIONS_SENSITIVITY_QUOTES = smartCorrectionsSensitivity("quotes")
+val SMART_CORRECTIONS_SENSITIVITY_EMOJI = smartCorrectionsSensitivity("emoji")

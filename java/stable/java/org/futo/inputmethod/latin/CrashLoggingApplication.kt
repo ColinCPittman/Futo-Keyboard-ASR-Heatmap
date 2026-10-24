@@ -52,8 +52,8 @@ class CrashLoggingApplication : Application() /*, Configuration.Provider*/ {
 
         if(BuildConfig.DEBUG) return
 
-        // Pluto Keyboard: crash reports are not sent anywhere. FUTO's crash reporter offered to
-        // email reports to FUTO, who do not support this app; problems are reported on the Pluto
+        // Pluto Keyboard does not send crash reports anywhere. FUTO's crash reporter offered to
+        // email reports to FUTO, who do not support this app, so problems are reported on the Pluto
         // Keyboard GitHub page instead (Help & Feedback). The app has no INTERNET permission.
         if(!BuildConfig.ENABLE_ACRA) {
             println("Crash reporting is disabled")
@@ -89,7 +89,7 @@ class CrashLoggingApplication : Application() /*, Configuration.Provider*/ {
                 //        httpMethod = HttpSender.Method.POST
                 //    }
                 //} else {
-                // Pluto Keyboard: no email sender (FUTO's was keyboard@futo.org). If crash reporting is
+                // Pluto Keyboard has no email sender (FUTO's was keyboard@futo.org). If crash reporting is
                 // ever enabled through crashreporting.properties, a sender for Pluto Keyboard must be
                 // configured here first.
                 //}

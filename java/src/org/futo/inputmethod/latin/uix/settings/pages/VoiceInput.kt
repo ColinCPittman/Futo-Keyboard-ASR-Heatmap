@@ -145,7 +145,7 @@ val VoiceInputMenu = UserSettingsMenu(
             }
         )
     ) + listOf(
-        // Pluto: while a model is missing, tapping the greyed-out switch opens the setup guide
+        // Pluto change. While a model is missing, tapping the greyed-out switch opens the setup guide
         PunctuationRestorationSetting.opensVoiceSetupGuideWhen { PunctuationModels.installed(it).isEmpty() },
         ContextModelSetting.opensVoiceSetupGuideWhen { ContextModels.installed(it).isEmpty() && ContextModels.deviceSupported }
     ) + listOf(

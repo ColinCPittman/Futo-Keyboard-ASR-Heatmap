@@ -8,8 +8,8 @@ import java.io.File
  * decoding half of core/bin-tokenizer/bin-tokenizer.cpp).
  *
  * The file is a sequence of entries, one per token id. Each entry is a length
- * followed by that many UTF-8 bytes. A length < 128 is a single byte; otherwise
- * it is two bytes: `(second * 128) + first - 128`. A zero length marks an
+ * followed by that many UTF-8 bytes. A length < 128 is a single byte. Otherwise
+ * it is two bytes, computed as `(second * 128) + first - 128`. A zero length marks an
  * unused id.
  */
 class BinTokenizer(data: ByteArray, private val spaceString: String = "▁") {

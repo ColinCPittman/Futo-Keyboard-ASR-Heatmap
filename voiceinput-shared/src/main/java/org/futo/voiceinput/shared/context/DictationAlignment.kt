@@ -4,7 +4,7 @@ package org.futo.voiceinput.shared.context
  * Finds again, in the text around the cursor, a dictation that was inserted earlier, to see what
  * the user changed it to (developer setting "Save dictations for tuning"). The inserted text is
  * located by the text that surrounded it when it was inserted ([anchorBefore], [anchorAfter]), never
- * by guessing: anything ambiguous or too different gives null.
+ * by guessing, so anything ambiguous or too different gives null.
  */
 object DictationAlignment {
     /** Characters of the surrounding text kept as anchors. */
@@ -13,7 +13,7 @@ object DictationAlignment {
 
     /**
      * What the span [inserted] was edited to, or null when it is unchanged or cannot be lined up.
-     * [before] / [after]: the text before / after the cursor now. [atFieldStart] / [atFieldEnd]: the
+     * [before] / [after] are the text before / after the cursor now. [atFieldStart] / [atFieldEnd] say the
      * dictation was inserted at the very start / end of the field (so an empty anchor is exact).
      */
     fun corrected(

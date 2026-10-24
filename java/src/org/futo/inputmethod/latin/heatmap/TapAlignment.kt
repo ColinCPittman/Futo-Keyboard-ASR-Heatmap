@@ -41,7 +41,7 @@ class AlignmentResult(
 
 /**
  * Aligns the taps of a finalized word with the word that was finally committed, producing
- * per-key offset samples. Only unambiguous cases are learned from: the same number of plain taps
+ * per-key offset samples. Only unambiguous cases are learned from, namely the same number of plain taps
  * as letters (substitutions only), letter-only words, and few substitutions.
  */
 object TapAligner {
@@ -124,7 +124,7 @@ object TapAligner {
                 }
             } else {
                 // Correct taps can legitimately be far from the key centre (e.g. in the extended
-                // hitbox of an edge key); clip them so they cannot dominate the mean.
+                // hitbox of an edge key), so they are clipped to keep them from dominating the mean.
                 dx = dx.coerceIn(-limit, limit)
                 dy = dy.coerceIn(-limit, limit)
             }
@@ -136,7 +136,7 @@ object TapAligner {
 
 /**
  * Records the raw tap of each code point of the composing word, indexed by position in the word
- * (mirroring how WordComposer stores InputPointers: deleting and retyping overwrites the slot).
+ * (mirroring how WordComposer stores InputPointers, where deleting and retyping overwrites the slot).
  */
 class TapRecorder(private val capacity: Int) {
     private val codes = IntArray(capacity)

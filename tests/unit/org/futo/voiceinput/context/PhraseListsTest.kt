@@ -10,7 +10,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** The filler words, self-correction and quote phrase lists: only your changes are saved. */
+/** The filler words, self-correction and quote phrase lists, where only your changes are saved. */
 class PhraseListsTest {
     private val lists: List<PhraseList> = listOf(FillerWords, CorrectionPhrases, QuoteTriggers)
 
@@ -27,7 +27,7 @@ class PhraseListsTest {
         }
     }
 
-    /** A list saved in the old format held the whole list; it is read as your changes only. */
+    /** A list saved in the old format held the whole list, and it is read as your changes only. */
     @Test
     fun oldSavedListsAreMigrated() {
         for (list in lists) {
@@ -35,7 +35,7 @@ class PhraseListsTest {
             val first = saved[0]
             val second = saved[1]
             val deleted = saved[2]
-            // the old page: everything, with one switched off, one deleted and one phrase added
+            // the old page had everything, with one switched off, one deleted and one phrase added
             val old = saved.filter { it != deleted }
                 .joinToString("\n") { if (it == second) "$it\t0" else it } + "\n$mine"
             val changes = list.parse(old)
@@ -68,14 +68,14 @@ class PhraseListsTest {
         assertTrue("make that" in on)
         assertTrue("no actually" in on)
         assertFalse("rather" in on)
-        // saved with the second one: its "make that" missing means you deleted it
+        // saved with the second one, so its "make that" missing means you deleted it
         val v2 = CorrectionPhrases.parse((v1 + "no actually").joinToString("\n"))
         assertFalse("make that" in CorrectionPhrases.enabledPhrases(v2))
         // a phrase you added that is built-in now stays yours
-        // ("you know" was added to the built-in fillers after the first list)
-        val grown = FillerWords.parse(FillerWords.SAVED_DEFAULTS[0].joinToString("\n") + "\nyou know")
-        assertEquals(listOf(PhraseEntry("you know")), grown)
-        assertEquals(listOf("you know"), FillerWords.enabledPhrases(grown, builtIn = false))
+        // ("basically" was added to the built-in fillers after the first list)
+        val grown = FillerWords.parse(FillerWords.SAVED_DEFAULTS[0].joinToString("\n") + "\nbasically")
+        assertEquals(listOf(PhraseEntry("basically")), grown)
+        assertEquals(listOf("basically"), FillerWords.enabledPhrases(grown, builtIn = false))
         assertTrue("like" in FillerWords.enabledPhrases(grown))
     }
 
@@ -91,7 +91,7 @@ class PhraseListsTest {
         }
     }
 
-    /** The switch never changes the saved list: off and back on, everything is as it was. */
+    /** The switch never changes the saved list, so off and back on, everything is as it was. */
     @Test
     fun switchRoundTrip() {
         for (list in lists) {
@@ -105,7 +105,7 @@ class PhraseListsTest {
         }
     }
 
-    /** With all the built-in phrases on, one you switched off stays off; on again, it is back. */
+    /** With all the built-in phrases on, one you switched off stays off, and on again, it is back. */
     @Test
     fun switchedOffBuiltInStaysOff() {
         for (list in lists) {

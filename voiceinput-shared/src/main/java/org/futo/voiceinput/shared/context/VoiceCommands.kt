@@ -4,15 +4,15 @@ import java.util.Locale
 
 /** How a command's [VoiceCommandAction.symbol] sits between the words around it. */
 enum class CommandSpacing {
-    /** A line break; the next line starts with a capital letter. */
+    /** A line break, and the next line starts with a capital letter. */
     LINE,
-    /** After the previous word, then a space: "word, next", "word) next". */
+    /** After the previous word, then a space (like "word, next" or "word) next"). */
     AFTER_WORD,
-    /** Before the next word, with a space in front: "word (next", "word $next". */
+    /** Before the next word, with a space in front (like "word (next" or "word $next"). */
     BEFORE_WORD,
-    /** Joins the words around it: "well-known", "and/or", "snake_case". */
+    /** Joins the words around it (like "well-known", "and/or" or "snake_case"). */
     JOIN,
-    /** With a space on both sides: "rock & roll", "a — b". */
+    /** With a space on both sides (like "rock & roll" or "a — b"). */
     SPACED,
     /** Removes the sentence (or utterance) said just before the command. */
     DELETE_SENTENCE,
@@ -21,7 +21,7 @@ enum class CommandSpacing {
 }
 
 /**
- * What a spoken command does: the [symbol] it inserts and its [spacing]. [endsSentence]: the next
+ * What a spoken command does, in terms of the [symbol] it inserts and its [spacing]. [endsSentence] means the next
  * word starts with a capital letter.
  */
 enum class VoiceCommandAction(
@@ -64,7 +64,7 @@ enum class VoiceCommandAction(
     DELETE_LAST_WORD("", CommandSpacing.DELETE_WORD),
 }
 
-/** One spoken command: the words to say, what they do, and whether it is switched on. */
+/** One spoken command, with the words to say, what they do, and whether it is switched on. */
 data class VoiceCommand(val phrase: String, val action: VoiceCommandAction, val enabled: Boolean = true) {
     /** The phrase as normalized words ("New line." -> ["new", "line"]). */
     val words: List<String> = VoiceCommands.phraseWords(phrase)
@@ -127,19 +127,19 @@ object VoiceCommands {
             .map { it.trim('\'') }
             .filter { it.isNotEmpty() }
 
-    /** Whether [phrase] can be a command: 1 to [MAX_WORDS] words. */
+    /** Whether [phrase] can be a command, which takes 1 to [MAX_WORDS] words. */
     fun isValidPhrase(phrase: String): Boolean = phraseWords(phrase).size in 1..MAX_WORDS
 
     /** The switched-on commands of [commands]. */
     fun enabled(commands: List<VoiceCommand>): List<VoiceCommand> = commands.filter { it.enabled }
 
-    /** One command per line: `ACTION<TAB>phrase`, plus `<TAB>0` when it is switched off. */
+    /** One command per line as `ACTION<TAB>phrase`, plus `<TAB>0` when it is switched off. */
     fun serialize(commands: List<VoiceCommand>): String =
         commands.joinToString("\n") {
             "${it.action.name}\t${phraseWords(it.phrase).joinToString(" ")}" + if (it.enabled) "" else "\t0"
         }
 
-    /** Parses [serialize]'s format; blank text means [DEFAULTS]. Unknown or invalid lines are skipped. */
+    /** Parses [serialize]'s format, and blank text means [DEFAULTS]. Unknown or invalid lines are skipped. */
     fun parse(text: String): List<VoiceCommand> {
         if (text.isBlank()) return DEFAULTS
         val out = ArrayList<VoiceCommand>()

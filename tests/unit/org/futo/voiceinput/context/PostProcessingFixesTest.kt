@@ -4,7 +4,7 @@ import org.futo.voiceinput.shared.context.NumberWords
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-/** Rules behind the voice post-processing fixes: spoken times (no models). */
+/** Rules behind the voice post-processing fixes, such as spoken times (no models). */
 class PostProcessingFixesTest {
     @Test
     fun spokenTimeForms() {

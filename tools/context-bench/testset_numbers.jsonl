@@ -34,3 +34,15 @@
 {"id": "nun16", "cat": "control", "input": "He's a nine to five kind of guy.", "expected": "He's a nine to five kind of guy."}
 {"id": "nun17", "cat": "control", "input": "Two or three people said the same thing.", "expected": "Two or three people said the same thing."}
 {"id": "nun18", "cat": "control", "input": "Hundreds of people showed up.", "expected": "Hundreds of people showed up."}
+{"id": "nu19", "cat": "number", "input": "Four hundred dollars profit, I mean.", "expected": "$400 profit, I mean."}
+{"id": "nu20", "cat": "number", "input": "Eighty dollars a month for the gym.", "expected": "$80 a month for the gym."}
+{"id": "nu21", "cat": "number", "input": "Thirty percent off everything this weekend.", "expected": "30% off everything this weekend."}
+{"id": "nu22", "cat": "number", "input": "I made 800 dollars last week.", "expected": "I made $800 last week."}
+{"id": "nu23", "cat": "number", "input": "It costs 1,200 dollars to fix.", "expected": "It costs $1,200 to fix."}
+{"id": "nu24", "cat": "number", "input": "We paid 3.50 dollars for coffee.", "expected": "We paid $3.50 for coffee."}
+{"id": "nu25", "cat": "number", "input": "I got 30 percent off.", "expected": "I got 30% off."}
+{"id": "nu26", "cat": "number", "input": "The ticket was 45 dollars and parking was 12 dollars.", "expected": "The ticket was $45 and parking was $12."}
+{"id": "nun19", "cat": "control", "input": "He paid with a 5 dollar bill.", "expected": "He paid with a 5 dollar bill."}
+{"id": "nun20", "cat": "control", "input": "It was $800 dollars.", "expected": "It was $800 dollars."}
+{"id": "nun21", "cat": "control", "input": "He gave me a dollar.", "expected": "He gave me a dollar."}
+{"id": "nun22", "cat": "control", "input": "Three hundred people signed up.", "expected": "Three hundred people signed up."}

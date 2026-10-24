@@ -1,8 +1,8 @@
 {"id": "af-you_know-L1", "cat": "control", "input": "Do you know where my keys are?", "expected": "Do you know where my keys are?", "cand": "you know"}
 {"id": "af-you_know-L2", "cat": "control", "input": "You know the answer already.", "expected": "You know the answer already.", "cand": "you know"}
 {"id": "af-you_know-L3", "cat": "control", "input": "I know you know the way.", "expected": "I know you know the way.", "cand": "you know"}
-{"id": "af-you_know-P1", "cat": "filler", "input": "We were, you know, pretty tired.", "expected": "We were pretty tired.", "cand": "you know", "alts": ["We were, pretty tired."]}
-{"id": "af-you_know-P2", "cat": "filler", "input": "Can you, you know, help me out?", "expected": "Can you help me out?", "cand": "you know", "alts": ["Can you, help me out?"]}
+{"id": "af-you_know-P1", "cat": "control", "input": "We were, you know, pretty tired.", "expected": "We were, you know, pretty tired.", "cand": "you know"}
+{"id": "af-you_know-P2", "cat": "control", "input": "Can you, you know, help me out?", "expected": "Can you, you know, help me out?", "cand": "you know"}
 {"id": "af-like-L1", "cat": "control", "input": "I like the new design.", "expected": "I like the new design.", "cand": "like"}
 {"id": "af-like-L2", "cat": "control", "input": "It looks like rain today.", "expected": "It looks like rain today.", "cand": "like"}
 {"id": "af-like-L3", "cat": "control", "input": "Would you like some tea?", "expected": "Would you like some tea?", "cand": "like"}

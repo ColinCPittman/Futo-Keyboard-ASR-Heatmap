@@ -29,7 +29,7 @@ class HeatmapModelTest {
         repeat(1000) { s.add(0f, 0f) }
         assertEquals(HeatmapConfig.MAX_EFFECTIVE_COUNT, s.effectiveCount, eps)
         repeat(300) { s.add(0.5f, 0f) }
-        // Exponential forgetting: after one "cap" worth of new samples, ~63% of the way there.
+        // Exponential forgetting, so after one "cap" worth of new samples, ~63% of the way there.
         assertTrue(s.meanX > 0.3f && s.meanX < 0.33f)
         assertEquals(1300L, s.totalCount)
     }

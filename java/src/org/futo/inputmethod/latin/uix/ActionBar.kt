@@ -417,7 +417,7 @@ data class SuggestionLayout(
     val swipePrimaryElement: SuggestedWordInfo?,
 
     /**
-     * Set in "always use middle suggestion" mode when there is no autocorrection: the typed word
+     * Set in "always use middle suggestion" mode when there is no autocorrection. The typed word
      * is what gets committed, so it is shown (highlighted) in the middle slot.
      */
     val verbatimInMiddle: SuggestedWordInfo?,
@@ -530,7 +530,7 @@ fun RowScope.SuggestionItems(words: SuggestedWords, onClick: (i: Int) -> Unit, o
                 (layout.emojiMatches.isEmpty() && layout.presentableSuggestions.size <= 1) ->
             suggestionItem(layout.presentableSuggestions.firstOrNull())
 
-        // "Always use middle suggestion" mode: the middle slot is always what will be committed.
+        // In "Always use middle suggestion" mode the middle slot is always what will be committed.
         // The verbatim word is preferably placed on the left, so it can be tapped to keep it.
         layout.autocorrectMatch != null && words.mAlwaysUseMiddleSuggestion -> {
             val verbatimDiffers = layout.verbatimWord != null
@@ -849,7 +849,7 @@ fun ImportantNoticeView(
 
 /**
  * Pluto: [ImportantNotice] with a headline, a second line and an action button. It has no close
- * icon: these notices go away by themselves after a few seconds or when typing goes on.
+ * icon because these notices go away by themselves after a few seconds or when typing goes on.
  */
 @Composable
 private fun ActionNoticeView(importantNotice: ImportantNotice, actionLabel: String) {
@@ -935,6 +935,7 @@ fun ActionBar(
     loading: Boolean = false,
     typingFixes: List<TypingFix> = emptyList(),
     onOpenTypingFixes: () -> Unit = {},
+    onAddCorrection: () -> Unit = {},
 ) {
     val view = LocalView.current
     val context = LocalContext.current
@@ -999,8 +1000,8 @@ fun ActionBar(
                         ImportantNoticeView(importantNotice)
                     } else {
                         val typingFixChipOnRight = useDataStore(TYPING_FIX_CHIP_ON_RIGHT).value
-                        if (typingFixes.isNotEmpty() && !loading && !typingFixChipOnRight) {
-                            TypingFixChip(typingFixes, onOpenTypingFixes)
+                        if (!loading && !typingFixChipOnRight) {
+                            TypingStripChip(typingFixes, onOpenTypingFixes, onAddCorrection)
                         }
                         if(loading) {
                             Spacer(Modifier.weight(1.0f))
@@ -1036,8 +1037,8 @@ fun ActionBar(
                             Spacer(modifier = Modifier.weight(1.0f))
                         }
 
-                        if (typingFixes.isNotEmpty() && !loading && typingFixChipOnRight) {
-                            TypingFixChip(typingFixes, onOpenTypingFixes)
+                        if (!loading && typingFixChipOnRight) {
+                            TypingStripChip(typingFixes, onOpenTypingFixes, onAddCorrection)
                         }
 
                         if(inlineSuggestions.isEmpty()) {

@@ -7,18 +7,18 @@ import java.io.File
 import java.util.Locale
 
 /**
- * Engine "pcs": 1-800-BAD-CODE/punctuation_fullstop_truecase_english (punct_cap_seg_en.onnx).
+ * Engine "pcs" is 1-800-BAD-CODE/punctuation_fullstop_truecase_english (punct_cap_seg_en.onnx).
  *
  * Mirrors the `punctuators` Python package (PunctCapSegModelONNX):
- *  - the model input is the *lowercased* text, SentencePiece-unigram encoded, wrapped in BOS(1)/EOS(2);
+ *  - the model input is the *lowercased* text, SentencePiece-unigram encoded, wrapped in BOS(1)/EOS(2),
  *  - at most 256 positions (254 pieces) per window, windows overlap by 16 pieces, and in the overlap each
- *    window contributes only its inner part (the first/last 8 pieces of an inner window are dropped);
- *  - outputs (already arg-maxed inside the graph): pre_preds (inverted marks, unused), post_preds
+ *    window contributes only its inner part (the first/last 8 pieces of an inner window are dropped),
+ *  - outputs (already arg-maxed inside the graph) are pre_preds (inverted marks, unused), post_preds
  *    [<NULL>, <ACRONYM>, ., `,`, ?], cap_preds [T,16] (per character of the piece, index counted *with* the
  *    leading U+2581), seg_preds (sentence boundary after this piece).
  *
- * Differences from the Python package, by design: the output is rebuilt from the ORIGINAL words (see
- * [TextProcessing]); ACRONYM is ignored; sentence ends are forced to be . or ?.
+ * Differences from the Python package, by design. The output is rebuilt from the ORIGINAL words (see
+ * [TextProcessing]), ACRONYM is ignored, and sentence ends are forced to be . or ?.
  */
 internal class PcsRestorer(
     onnxFile: File,
@@ -105,20 +105,20 @@ internal class PcsRestorer(
             for (j in cps.indices) sb.appendCodePoint(if (flags[j]) Character.toUpperCase(cps[j]) else cps[j])
             result = sb.toString()
         } else {
-            // Unknown characters / length-changing lowercase: only trust the first-letter flag
+            // Unknown characters / length-changing lowercase, so only trust the first-letter flag
             result = if (flags.isNotEmpty() && flags[0]) TextProcessing.capitalizeFirst(lc, false) else lc
         }
-        // the per-subword flags can produce "eTA" or "mCDonald": only whole-word casing is allowed
+        // the per-subword flags can produce "eTA" or "mCDonald", so only whole-word casing is allowed
         if (!TextProcessing.wholeWordCase(result)) result = w.core
         // Mid-sentence (no ASR sentence terminator before it, not a segment start) the ASR's casing is
-        // trusted in both directions: it heard the audio, while the casing model, trained on news text, can
+        // trusted in both directions because it heard the audio, while the casing model, trained on news text, can
         // turn common words into names ("toaster oven" -> "Toaster oven"). At segment starts and after the
         // ASR's sentence terminators its capitals are unreliable ("I got | Just start"), so the model decides.
         if (options.keepAsrCapitals && i > 0 && words[i - 1].asrTerminal == null && !w.segmentStart) {
             result = when {
                 w.startsUpper -> TextProcessing.capitalizeFirst(result, false)
                 TextProcessing.PRONOUN_I.matches(lc) -> result
-                // the model's ALL CAPS word (an acronym) stays whole: lowering only its first letter gives "eTA"
+                // the model's ALL CAPS word (an acronym) stays whole, because lowering only its first letter gives "eTA"
                 result.count { it.isLetter() } >= 2 && result.none { it.isLowerCase() } -> result
                 else -> TextProcessing.lowercaseFirst(result)
             }

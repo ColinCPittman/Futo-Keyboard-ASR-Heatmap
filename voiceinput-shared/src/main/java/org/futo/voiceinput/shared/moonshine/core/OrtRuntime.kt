@@ -15,10 +15,10 @@ enum class OrtAccelerator {
     /** Default ONNX Runtime CPU (MLAS) kernels. */
     CPU,
 
-    /** XNNPACK execution provider; unsupported nodes fall back to CPU. */
+    /** XNNPACK execution provider, and unsupported nodes fall back to CPU. */
     XNNPACK,
 
-    /** Android NNAPI execution provider; unsupported nodes fall back to CPU. */
+    /** Android NNAPI execution provider, and unsupported nodes fall back to CPU. */
     NNAPI
 }
 
@@ -34,9 +34,9 @@ data class OrtRuntimeOptions(
 /**
  * Picks a thread count for big.LITTLE CPUs. ONNX Runtime splits each operator
  * evenly across its threads, so a thread that lands on a little core makes
- * every parallel section wait for it (measured on a hybrid desktop CPU:
+ * every parallel section wait for it (measured on a hybrid desktop CPU, where
  * 4 threads on 2 fast + 2 slow cores were slower than 2 threads on the 2 fast
- * cores). So: use the number of "big" cores, clamped to 2..4.
+ * cores). So use the number of "big" cores, clamped to 2..4.
  */
 object CpuTopology {
     val autoThreadCount: Int by lazy { compute() }
@@ -49,7 +49,7 @@ object CpuTopology {
 
     private fun compute(): Int {
         val n = Runtime.getRuntime().availableProcessors()
-        // Linux/Android: per-core capacity (EAS) or max frequency.
+        // Linux/Android use per-core capacity (EAS) or max frequency.
         val capacities = (0 until n).mapNotNull { readInt("/sys/devices/system/cpu/cpu$it/cpu_capacity") }
         val freqs = (0 until n).mapNotNull { readInt("/sys/devices/system/cpu/cpu$it/cpufreq/cpuinfo_max_freq") }
         val big = when {
@@ -84,20 +84,20 @@ internal class OrtSessionFactory(
             options.setIntraOpNumThreads(threadsForSession)
             options.setInterOpNumThreads(1)
             // Keep ORT's CPU memory arena enabled (unlike the moonshine C++
-            // library): without it every decoder step does large malloc/free
+            // library), because without it every decoder step does large malloc/free
             // pairs, which measured ~2x slower decoding.
             options.addConfigEntry("session.load_model_format", "ORT")
             options.addConfigEntry("session.use_ort_model_bytes_directly", "1")
             options.addConfigEntry("session.use_ort_model_bytes_for_initializers", "1")
             // Each session has its own intra-op pool and they run one after
-            // another; spinning workers of idle pools steal cores from the
-            // active one (measured: 8 threads were 10x slower with spinning).
+            // another, and spinning workers of idle pools steal cores from the
+            // active one (8 threads measured 10x slower with spinning).
             options.addConfigEntry("session.intra_op.allow_spinning", "0")
 
             when (acceleratorForSession) {
                 OrtAccelerator.CPU -> {}
                 OrtAccelerator.XNNPACK -> {
-                    // XNNPACK has its own thread pool; nodes it can't take still
+                    // XNNPACK has its own thread pool, and nodes it can't take still
                     // run on the CPU EP pool.
                     options.addXnnpack(mapOf("intra_op_num_threads" to threadsForSession.toString()))
                 }

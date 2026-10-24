@@ -16,7 +16,7 @@ class EmojiNamesTest {
     /** The name map with your changes [list] (the saved format). */
     private fun mine(list: String) = EmojiNames.nameMap(index, EmojiNames.parse(list, index))
 
-    /** What "<[name]> emoji" gives: the emoji, or null for none. */
+    /** What "<[name]> emoji" gives (the emoji, or null for none). */
     private fun gives(name: String, map: Map<List<String>, String> = names) = EmojiNames.lookup(map, name)?.takeIf { it.isNotEmpty() }
 
     /** Applies the emoji groups of [text] (each checked by the guard) with the name map [map]. */
@@ -48,7 +48,7 @@ class EmojiNamesTest {
         assertEquals(2, changes.size)
     }
 
-    /** Nicknames, keywords and their spoken versions: you don't need the official name. */
+    /** Nicknames, keywords and their spoken versions, so you don't need the official name. */
     @Test
     fun spokenNames() {
         for ((name, emoji) in listOf(
@@ -69,7 +69,7 @@ class EmojiNamesTest {
         )) assertEquals(name, emoji, gives(name))
     }
 
-    /** A name that fits several emoji gives none; words that talk about emoji in general are no names. */
+    /** A name that fits several emoji gives none, and words that talk about emoji in general are no names. */
     @Test
     fun ambiguousNamesGiveNone() {
         // keywords of many emoji
@@ -169,7 +169,7 @@ class EmojiNamesTest {
         // your names come first
         assertEquals("So funny 😆", applyEmoji("So funny laughing emoji", map))
         assertEquals("Finish 🏁", applyEmoji("Finish flag emoji", map))
-        // the punctuation model writes hyphens ("mind-blown"); names match with or without them
+        // the punctuation model writes hyphens ("mind-blown"), and names match with or without them
         val blown = mine("mind blown\t🤯")
         assertEquals("I'm 🤯", applyEmoji("I'm mind-blown emoji", blown))
         assertEquals("I'm 🤯", applyEmoji("I'm mind blown emoji", blown))
@@ -179,7 +179,7 @@ class EmojiNamesTest {
         assertEquals("That's great 👍", applyEmoji("That's great thumbs, up, emoji."))
         assertEquals("I'm 🤯", applyEmoji("I'm mind, blown, emoji.", blown))
         assertEquals("I'm 🤯", applyEmoji("I'm mind-blown. Emoji.", blown))
-        // from your dictations: the voice model's question mark goes, "at Mojie" is "emoji"
+        // from your dictations (the voice model's question mark goes, "at Mojie" is "emoji")
         val cl = mine("crying laughing	😂")
         assertEquals("What are you up to now? 😂", applyEmoji("What are you up to now? Crying, laughing emoji?", cl))
         assertEquals("What are you up to now? 😂", applyEmoji("What are you up to now? Crying, laughing at Mojie?", cl))
@@ -193,7 +193,7 @@ class EmojiNamesTest {
         assertEquals("I like the thumbs up. Emoji are fun.", applyEmoji("I like the thumbs up. Emoji are fun."))
         // a switched-off name stays as words
         assertEquals("Okay thumbs up emoji", applyEmoji("Okay thumbs up emoji", map))
-        // and so does every shorter name in it: no "thumbs 🆙"
+        // and so does every shorter name in it, so no "thumbs 🆙"
         assertEquals("Okay thumbs up emoji.", applyEmoji("Okay thumbs up emoji.", map))
         // the built-in names stay with your list
         assertEquals("Nice 🔥", applyEmoji("Nice fire emoji", map))
@@ -207,7 +207,7 @@ class EmojiNamesTest {
 class EmojiNamesListTest {
     private val index = EmojiNames.builtIn(File("java/res/raw/gemoji.json").readText())
 
-    /** A list saved before the built-in names grew held every official name; only your changes are kept. */
+    /** A list saved before the built-in names grew held every official name, but only your changes are kept. */
     @Test
     fun oldSavedListsKeepWorking() {
         // the old list left out names two emoji share ("keycap: #" and "keycap: *")
@@ -234,7 +234,7 @@ class EmojiNamesListTest {
         assertEquals(listOf(EmojiNickname("yay", "🥳")), EmojiNames.parse("yay\t🥳", index))
     }
 
-    /** With the built-in names off, only your own names give emoji; your changes stay as they are. */
+    /** With the built-in names off, only your own names give emoji, and your changes stay as they are. */
     @Test
     fun builtInNamesOff() {
         val stored = "lol\t😆\nthumbs up\t👍\t0\nyay\t🥳"
@@ -243,7 +243,7 @@ class EmojiNamesListTest {
         assertEquals(mapOf(listOf("lol") to "😆", listOf("yay") to "🥳"), off)
         assertEquals(null, off[listOf("heart")])
         assertEquals(null, off[listOf("face", "with", "tears", "of", "joy")])
-        // the switch doesn't touch the saved list: back on, everything is as it was
+        // the switch doesn't touch the saved list, so back on, everything is as it was
         assertEquals(stored, EmojiNames.serialize(changes))
         val on = EmojiNames.nameMap(index, changes, builtIn = true)
         assertEquals(EmojiNames.nameMap(index, changes), on)
@@ -277,7 +277,7 @@ class EmojiNamesListTest {
         assertEquals(listOf(null to "😂", "lol" to "😂", null to "👍", "thumbs up" to "👍"), off.map { it.name to it.emoji })
     }
 
-    /** The numbers: emoji with names, names as written and with their variants. */
+    /** The numbers (emoji with names, names as written and with their variants). */
     @Test
     fun counts() {
         val withNames = index.emojis.count { it.names.isNotEmpty() }
@@ -289,7 +289,7 @@ class EmojiNamesListTest {
         assertTrue(withNames > 1800)
     }
 
-    /** Searching is quick: every key in the search box runs one. */
+    /** Searching is quick, because every key in the search box runs one. */
     @Test
     fun searchIsFast() {
         val names = EmojiNames.nameMap(index, emptyList())

@@ -7,11 +7,11 @@
 //
 // <model-dir> is an extracted model package (tools/package-models.py --no-zip
 // leaves one per model in its cache directory). reference.py runs the official
-// moonshine-voice Python package on the same WAV for comparison; build with
+// moonshine-voice Python package on the same WAV for comparison, and build with
 // -PortVersion=1.23.2 to use the ONNX Runtime version that package bundles
 // (outputs then match word for word).
 //
-// Windows note: ONNX Runtime >= 1.2x crashes in msvcp140.dll when the JVM's own
+// On Windows, ONNX Runtime >= 1.2x crashes in msvcp140.dll when the JVM's own
 // (older) msvcp140.dll is loaded first. Run with a JDK copy whose bin/
 // msvcp140.dll, vcruntime140.dll and vcruntime140_1.dll are replaced by the
 // current ones from C:\Windows\System32.

@@ -40,3 +40,6 @@
 {"id": "nmn20", "cat": "control", "input": "Ask Rose if she wants to come.", "expected": "Ask Rose if she wants to come."}
 {"id": "nmn21", "cat": "control", "input": "I watched the new Batman movie.", "expected": "I watched the new Batman movie."}
 {"id": "nmn22", "cat": "control", "input": "We drove up to Lake Tahoe.", "expected": "We drove up to Lake Tahoe."}
+{"id": "nm_ex1", "cat": "control", "input": "Oh darn, we missed the last train.", "expected": "Oh darn, we missed the last train.", "personal": ["Hadorn"]}
+{"id": "nm_ex2", "cat": "control", "input": "Oh dang, the oven is still on.", "expected": "Oh dang, the oven is still on.", "personal": ["Odang", "Hadorn"]}
+{"id": "nm_ex3", "cat": "control", "input": "Well gosh, that took forever.", "expected": "Well gosh, that took forever.", "personal": ["Welgosh"]}

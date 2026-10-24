@@ -8,9 +8,9 @@ data class LearnedWord(val word: String, val locale: String, val probability: In
 
 /** The review list for "Copy learned words to dictionary". */
 data class CopyCandidates(
-    /** Words that look like passwords or keys; shown first and unchecked by default. */
+    /** Words that look like passwords or keys. They are shown first and unchecked by default. */
     val sensitive: List<LearnedWord>,
-    /** Everything else worth copying; checked by default. */
+    /** Everything else worth copying, checked by default. */
     val normal: List<LearnedWord>,
 )
 
@@ -18,10 +18,10 @@ object LearnedWordCandidates {
     private fun key(word: String) = word.lowercase(Locale.ROOT)
 
     /**
-     * Picks the learned words worth copying to the personal dictionary: names, slang and other
+     * Picks the learned words worth copying to the personal dictionary, such as names, slang and other
      * words the main dictionary doesn't know.
      *
-     * Skips words that are too short, already known ([isKnownWord]: in the main dictionary of that
+     * Skips words that are too short, already known ([isKnownWord], so in the main dictionary of that
      * language), already in the personal dictionary ([inPersonalDictionary]) or hidden by the user
      * ([hidden], compared ignoring case). Each word appears once (the most probable spelling wins
      * when the same word was learned with different capitalisation or in several languages), most
@@ -54,7 +54,7 @@ object LearnedWordCandidates {
  * Pluto-private list of learned words the user chose to "Never suggest" for copying to the
  * personal dictionary. One word per line in a UTF-8 text file in the app's private storage.
  * This is separate from FUTO's Word Blacklist (which hides typing suggestions) and from the
- * Android personal dictionary; it only affects the "Copy learned words" list.
+ * Android personal dictionary, and it only affects the "Copy learned words" list.
  */
 class HiddenLearnedWords(private val file: File) {
     @Synchronized

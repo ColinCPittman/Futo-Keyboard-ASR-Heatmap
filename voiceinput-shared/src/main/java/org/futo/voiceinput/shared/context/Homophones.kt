@@ -3,10 +3,10 @@ package org.futo.voiceinput.shared.context
 /**
  * Words that sound exactly alike ("meat" / "meet", "their" / "there"), as opposed to the
  * lexicon's near sound-alikes ("pool" / "poll", "kite" / "cat"). A voice model mixes up exact
- * homophones all the time; a near one it heard differently, so swapping it needs much more
+ * homophones all the time, but a near one it heard differently, so swapping it needs much more
  * evidence (see [ContextRescoreConfig.nearMargin]), and one that differs in a clearly different
  * sound ([confusable] false) is never swapped. Built by tools/context-bench/build_homophones.py
- * from the speech engine's pronunciations of the lexicon's pairs; a word that is not listed has
+ * from the speech engine's pronunciations of the lexicon's pairs, and a word that is not listed has
  * no exact homophone.
  */
 object Homophones {

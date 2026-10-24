@@ -43,7 +43,7 @@ data class RecognizerViewSettings(
     val decodingConfiguration: DecodingConfiguration,
     val recordingConfiguration: RecordingSettings,
 
-    /** Recognition engine; whisper by default. */
+    /** Recognition engine, and whisper by default. */
     val engine: RecognitionEngineConfiguration = RecognitionEngineConfiguration.Whisper,
 
     /** Hook applied to the final transcript before it is delivered (see [TranscriptPostProcessor]). */

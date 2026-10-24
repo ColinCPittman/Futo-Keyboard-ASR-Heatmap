@@ -22,10 +22,10 @@ class LayoutKey(
  * Each letter key's effective input region is its stock hitbox, translated by the learned
  * (shrunk, clamped) mean tap offset and scaled by the learned relative spread. A touch is scored
  * against a key by its signed Chebyshev distance to that region, in key units (negative inside,
- * i.e. minus the depth inside the region). The key with the lowest score wins: where regions
+ * i.e. minus the depth inside the region). The key with the lowest score wins. Where regions
  * overlap the touch goes to the region it is deeper inside, and in gaps to the closest region.
  *
- * For keys without data the region is exactly the stock hitbox; since stock hitboxes don't
+ * For keys without data the region is exactly the stock hitbox, and since stock hitboxes don't
  * overlap, a touch scores <= 0 only for the key whose hitbox contains it, so with no learned data
  * this reproduces stock behaviour exactly.
  *
@@ -75,13 +75,13 @@ class HeatmapLayout private constructor(
         return -1
     }
 
-    /** Signed distance (key units) to the stock hitbox; <= 0 inside. */
+    /** Signed distance (key units) to the stock hitbox, where <= 0 means inside. */
     fun stockDistance(slot: Int, x: Float, y: Float): Float = max(
         (abs(x - stockCx[slot]) - stockHalfW[slot]) / unitW[slot],
         (abs(y - stockCy[slot]) - stockHalfH[slot]) / unitH[slot]
     )
 
-    /** Signed distance (key units) to the adapted region; <= 0 inside. */
+    /** Signed distance (key units) to the adapted region, where <= 0 means inside. */
     fun score(slot: Int, x: Float, y: Float): Float = max(
         (abs(x - cx[slot]) - halfW[slot]) / unitW[slot],
         (abs(y - cy[slot]) - halfH[slot]) / unitH[slot]

@@ -1,12 +1,12 @@
 package org.futo.voiceinput.shared.context
 
-/** One entry of the "Quoted speech" list: a phrase that introduces quoted speech, switched on or off. */
+/** One entry of the "Quoted speech" list, a phrase that introduces quoted speech, switched on or off. */
 typealias QuoteTrigger = PhraseEntry
 
 /**
  * The phrases that introduce quoted speech ("she said", "I was like", "he fired back with"),
- * the "Quoted speech" settings page: the built-in ones and your changes. A phrase counts after a
- * person ("I", "she", "Sam"); "like" on its own counts after "I'm", "she's", "they're", ...
+ * the "Quoted speech" settings page (the built-in ones and your changes). A phrase counts after a
+ * person ("I", "she", "Sam"), and "like" on its own counts after "I'm", "she's", "they're", ...
  */
 object QuoteTriggers : PhraseList() {
     override val DEFAULTS: List<String> = listOf(
@@ -23,7 +23,7 @@ object QuoteTriggers : PhraseList() {
 
     /**
      * Built-in phrases that are often followed by what someone did rather than said ("she was all
-     * smiles!", "he answered the phone!", "he shouted at me!"): only a question, or speech that
+     * smiles!", "he answered the phone!", "he shouted at me!"), so only a question, or speech that
      * opens with "um", "oh", "hey," ..., is quoted after them, not anything ending in ? or !.
      */
     val SPEECH_ONLY: Set<List<String>> = listOf(

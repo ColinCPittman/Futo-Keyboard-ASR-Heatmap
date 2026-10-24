@@ -41,7 +41,7 @@ interface ActionInputTransaction {
     fun commit(text: String)
     fun cancel()
 
-    /** Ends the transaction leaving nothing behind: text shown with [updatePartial] is removed. */
+    /** Ends the transaction leaving nothing behind, so text shown with [updatePartial] is removed. */
     fun discard() = commit("")
 }
 

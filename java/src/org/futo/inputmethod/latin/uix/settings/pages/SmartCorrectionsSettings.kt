@@ -39,6 +39,16 @@ import org.futo.inputmethod.latin.uix.SMART_CORRECTIONS_NUMBERS
 import org.futo.inputmethod.latin.uix.SMART_CORRECTIONS_QUOTES
 import org.futo.inputmethod.latin.uix.SMART_CORRECTIONS_SELF_CORRECTIONS
 import org.futo.inputmethod.latin.uix.SMART_CORRECTIONS_SOUND_ALIKE
+import org.futo.inputmethod.latin.uix.SMART_CORRECTIONS_SENSITIVITY_COMMANDS
+import org.futo.inputmethod.latin.uix.SMART_CORRECTIONS_SENSITIVITY_EMOJI
+import org.futo.inputmethod.latin.uix.SMART_CORRECTIONS_SENSITIVITY_FILLERS
+import org.futo.inputmethod.latin.uix.SMART_CORRECTIONS_SENSITIVITY_NAMES
+import org.futo.inputmethod.latin.uix.SMART_CORRECTIONS_SENSITIVITY_NUMBERS
+import org.futo.inputmethod.latin.uix.SMART_CORRECTIONS_SENSITIVITY_QUESTIONS
+import org.futo.inputmethod.latin.uix.SMART_CORRECTIONS_SENSITIVITY_QUOTES
+import org.futo.inputmethod.latin.uix.SMART_CORRECTIONS_SENSITIVITY_SELF_CORRECTIONS
+import org.futo.inputmethod.latin.uix.SMART_CORRECTIONS_SENSITIVITY_SOUND_ALIKE
+import org.futo.inputmethod.latin.uix.settings.SettingSlider
 import org.futo.inputmethod.latin.uix.settings.DropDownPicker
 import org.futo.inputmethod.latin.uix.settings.SettingItem
 import org.futo.inputmethod.latin.uix.settings.SettingToggleDataStore
@@ -51,13 +61,14 @@ import org.futo.inputmethod.latin.uix.settings.userSettingDecorationOnly
 import org.futo.inputmethod.latin.uix.settings.userSettingToggleDataStore
 import org.futo.inputmethod.latin.uix.theme.Typography
 import org.futo.voiceinput.shared.context.CorrectionPhrases
+import org.futo.voiceinput.shared.context.SmartCorrectionSensitivity
 import org.futo.voiceinput.shared.context.VoiceCommand
 import org.futo.voiceinput.shared.context.VoiceCommandAction
 import org.futo.voiceinput.shared.context.VoiceCommands
 import org.futo.voiceinput.shared.modelpackage.ModelPackages
 
 /*
- * Voice Input → Smart corrections (a page of its own: the on/off switch first, then what the
+ * Voice Input → Smart corrections (a page of its own, with the on/off switch first, then what the
  * context pass may change) → Voice commands (its own switch, then the editable command list).
  */
 
@@ -87,7 +98,7 @@ private fun SubpageRow(title: String, subtitle: String, disabled: Boolean, onCli
 private fun stateText(on: Boolean, description: Int): String =
     stringResource(if (on) R.string.smart_corrections_state_on else R.string.smart_corrections_state_off, stringResource(description))
 
-/** Voice Input page: opens the Smart corrections page; the subtitle says whether it is on. */
+/** Voice Input page that opens the Smart corrections page, and the subtitle says whether it is on. */
 val ContextModelSetting = UserSetting(
     name = R.string.voice_input_settings_context,
     subtitle = R.string.voice_input_settings_context_subtitle,
@@ -122,7 +133,7 @@ private fun smartCorrectionOption(title: Int, subtitle: Int, setting: SettingsKe
         disabled = { !smartCorrectionsOn() }
     )
 
-/** Voice Input → Smart corrections: the switch, then which kinds of edits the context pass may make. */
+/** Voice Input → Smart corrections, with the switch, then which kinds of edits the context pass may make. */
 val SmartCorrectionsMenu = UserSettingsMenu(
     title = R.string.smart_corrections_title,
     navPath = "smartCorrections", registerNavPath = true,
@@ -176,10 +187,65 @@ val SmartCorrectionsMenu = UserSettingsMenu(
         subpageOption(R.string.smart_corrections_self_corrections, R.string.smart_corrections_self_corrections_subtitle, SMART_CORRECTIONS_SELF_CORRECTIONS) {
             SelfCorrectionsMenu.navPath
         },
+        UserSetting(name = R.string.smart_corrections_sensitivity, subtitle = R.string.smart_corrections_sensitivity_subtitle) {
+            val navController = LocalNavController.current
+            SubpageRow(
+                title = stringResource(R.string.smart_corrections_sensitivity),
+                subtitle = stringResource(R.string.smart_corrections_sensitivity_subtitle),
+                disabled = !smartCorrectionsOn(),
+                onClick = { navController?.navigate(SmartCorrectionsSensitivityMenu.navPath) }
+            )
+        },
     )
 )
 
-/** An option with its own page: the row says whether it is on and opens the page. */
+/** One option's sensitivity, in five steps from fewest to most changes. */
+internal fun sensitivitySlider(title: Int, setting: SettingsKey<Int>, subtitle: Int? = null) = UserSetting(name = title, appearsInSearch = false) {
+    val labels = listOf(
+        R.string.smart_corrections_sensitivity_fewest, R.string.smart_corrections_sensitivity_fewer,
+        R.string.smart_corrections_sensitivity_default, R.string.smart_corrections_sensitivity_more,
+        R.string.smart_corrections_sensitivity_most,
+    ).map { stringResource(it) }
+    SettingSlider(
+        title = stringResource(title),
+        setting = setting,
+        range = SmartCorrectionSensitivity.MIN.toFloat()..SmartCorrectionSensitivity.MAX.toFloat(),
+        transform = { kotlin.math.round(it).toInt() },
+        indicator = { labels[(it - SmartCorrectionSensitivity.MIN).coerceIn(0, labels.size - 1)] },
+        steps = SmartCorrectionSensitivity.MAX - SmartCorrectionSensitivity.MIN - 1,
+        subtitle = subtitle?.let { stringResource(it) },
+    )
+}
+
+/** Smart corrections → Sensitivity, which sets how readily each option changes the text. */
+val SmartCorrectionsSensitivityMenu = UserSettingsMenu(
+    title = R.string.smart_corrections_sensitivity,
+    navPath = "smartCorrectionsSensitivity", registerNavPath = true,
+    settings = listOf(
+        userSettingDecorationOnly {
+            if (!smartCorrectionsOn()) Tip(stringResource(R.string.smart_corrections_needs_main_switch))
+        },
+        userSettingDecorationOnly {
+            Text(
+                stringResource(R.string.smart_corrections_sensitivity_intro),
+                style = Typography.SmallMl,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+        },
+        sensitivitySlider(R.string.smart_corrections_sound_alike, SMART_CORRECTIONS_SENSITIVITY_SOUND_ALIKE),
+        sensitivitySlider(R.string.smart_corrections_names, SMART_CORRECTIONS_SENSITIVITY_NAMES),
+        sensitivitySlider(R.string.smart_corrections_questions, SMART_CORRECTIONS_SENSITIVITY_QUESTIONS),
+        sensitivitySlider(R.string.smart_corrections_numbers, SMART_CORRECTIONS_SENSITIVITY_NUMBERS),
+        sensitivitySlider(R.string.smart_corrections_fillers, SMART_CORRECTIONS_SENSITIVITY_FILLERS),
+        sensitivitySlider(R.string.smart_corrections_quotes, SMART_CORRECTIONS_SENSITIVITY_QUOTES),
+        sensitivitySlider(R.string.smart_corrections_emoji, SMART_CORRECTIONS_SENSITIVITY_EMOJI),
+        sensitivitySlider(R.string.smart_corrections_commands, SMART_CORRECTIONS_SENSITIVITY_COMMANDS),
+        sensitivitySlider(R.string.smart_corrections_self_corrections, SMART_CORRECTIONS_SENSITIVITY_SELF_CORRECTIONS),
+    )
+)
+
+/** An option with its own page, where the row says whether it is on and opens the page. */
 private fun subpageOption(title: Int, description: Int, setting: SettingsKey<Boolean>, navPath: () -> String) =
     UserSetting(name = title, subtitle = description) {
         val navController = LocalNavController.current
@@ -230,7 +296,7 @@ private fun actionName(action: VoiceCommandAction): String = stringResource(
 )
 
 /**
- * Add / edit dialog. [original] is null when adding. [others]: the other commands (a phrase may
+ * Add / edit dialog. [original] is null when adding. [others] holds the other commands (a phrase may
  * be used only once).
  */
 @Composable
@@ -370,7 +436,7 @@ private val VoiceCommandList = UserSetting(name = R.string.voice_commands_list_h
     }
 }
 
-/** Smart corrections → Voice commands: the switch, then the commands (tap one to change it). */
+/** Smart corrections → Voice commands, with the switch, then the commands (tap one to change it). */
 val VoiceCommandsMenu = UserSettingsMenu(
     title = R.string.smart_corrections_commands,
     navPath = "voiceCommands", registerNavPath = true,

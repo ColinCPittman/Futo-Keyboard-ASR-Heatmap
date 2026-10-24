@@ -224,8 +224,8 @@
     <!-- Payment screen -->
     <string name="payment_screen_short_title">Support FUTO</string>
     <string name="payment_screen_title">Pay for FUTO Keyboard</string>
-    <string name="payment_screen_sales_paragraph_1">You\'ve been using Pluto Keyboard for <xliff:g name="days" example="30">%d</xliff:g> days. Pluto is free and built on FUTO Keyboard. If you find it useful, please consider paying for FUTO Keyboard. The payment goes to FUTO and supports future FUTO software; none of it goes to Pluto\'s developer.</string>
-    <string name="payment_screen_sales_paragraph_1_alt">Thank you for trying Pluto Keyboard! Pluto is free and built on FUTO Keyboard. If you find it useful, please consider paying for FUTO Keyboard. The payment goes to FUTO and supports future FUTO software; none of it goes to Pluto\'s developer.</string>
+    <string name="payment_screen_sales_paragraph_1">You\'ve been using Pluto Keyboard for %d days. Pluto is free and built on FUTO Keyboard. If you find it useful, please consider paying for FUTO Keyboard. The payment goes to FUTO and supports future FUTO software (none of it goes to Pluto\'s developer).</string>
+    <string name="payment_screen_sales_paragraph_1_alt">Thank you for trying Pluto Keyboard! Pluto is free and built on FUTO Keyboard. If you find it useful, please consider paying for FUTO Keyboard. The payment goes to FUTO and supports future FUTO software (none of it goes to Pluto\'s developer).</string>
     <string name="payment_screen_sales_paragraph_2">FUTO is dedicated to making good software that doesn\'t abuse you. This app will never serve you ads or collect your personal data.</string>
     <string name="payment_screen_sales_point_development_title">Sustainable Development</string>
     <string name="payment_screen_sales_point_development_body">FUTO\'s mission is for open-source software and non-malicious software business practices to become a sustainable income source for projects and their developers. For this reason, we are in favor of users actually paying for software.</string>
@@ -585,7 +585,7 @@
     <string name="voice_input_settings_builtin_disabled_notice2">Using external engine: %s</string>
     <string name="voice_input_settings_backend_system">Voice typing app</string>
     <string name="voice_input_settings_backend_system_internal">Pluto (built-in)</string>
-    <string name="voice_input_settings_backend_system_external_warning">Note: %s will record your speech and may send it to online servers. Pluto\'s privacy promises don\'t cover other apps.</string>
+    <string name="voice_input_settings_backend_system_external_warning">%s will record your speech and may send it to online servers. Pluto\'s privacy promises don\'t cover other apps.</string>
     <string name="voice_input_settings_backend_system_confirm">Use %s for voice typing?</string>
     <string name="voice_input_settings_backend_system_confirm_yes">Switch</string>
     <string name="voice_input_settings_backend_system_confirm_no">Cancel</string>

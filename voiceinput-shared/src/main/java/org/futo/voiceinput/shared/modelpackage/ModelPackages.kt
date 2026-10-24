@@ -9,7 +9,7 @@ import java.io.InputStream
 /**
  * Android entry point for model packages (format described in ModelPackageStore.kt).
  *
- * Packages live in app-private storage: `filesDir/models/<kind>/<id>/`.
+ * Packages live in app-private storage, in `filesDir/models/<kind>/<id>/`.
  *
  * Typical use by a feature:
  * ```
@@ -45,7 +45,7 @@ object ModelPackages {
     fun detect(input: InputStream): ModelPackageManifest? = ModelPackageStore.detect(input)
 
     /**
-     * Extracts and validates a package (blocking; call on Dispatchers.IO).
+     * Extracts and validates a package (blocking, so call on Dispatchers.IO).
      * Throws [ModelPackageException] with a user-presentable message on failure.
      */
     fun install(

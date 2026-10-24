@@ -44,7 +44,7 @@ import org.futo.voiceinput.shared.context.TypingConfusions
 import org.futo.voiceinput.shared.context.TypingPairEdits
 
 /*
- * Smart corrections for typing → Typing corrections list: the pairs "typed word -> word you may
+ * Smart corrections for typing → Typing corrections list shows the pairs "typed word -> word you may
  * have meant" the typing check tries, searched by typed word, with your own pairs and the words
  * that are never changed.
  */
@@ -55,10 +55,12 @@ private const val MAX_RESULTS = 30
 private fun arrow(typed: String, intended: List<String>, max: Int = 6) =
     "$typed → " + intended.take(max).joinToString(", ") + if (intended.size > max) ", …" else ""
 
-/** Add / edit dialog for one of your own pairs; [original] is null when adding. */
+/** Add / edit dialog for one of your own pairs, and [original] is null when adding. */
 @Composable
 private fun OwnPairDialog(
     original: OwnTypingPair?,
+    edits: TypingPairEdits,
+    index: Int?,
     onSave: (OwnTypingPair) -> Unit,
     onDelete: (() -> Unit)?,
     onDismiss: () -> Unit,
@@ -67,6 +69,8 @@ private fun OwnPairDialog(
     var intended by remember { mutableStateOf(original?.intended?.joinToString(", ") ?: "") }
     val typedWord = TypingPairEdits.word(typed)
     val words = TypingPairEdits.words(intended).filter { it != typedWord }
+    // the same pair twice is not saved, because one of your other pairs has every word already
+    val duplicate = typedWord != null && words.isNotEmpty() && words.all { edits.hasOwn(typedWord, it, except = index) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(if (original == null) R.string.typing_pairs_add else R.string.typing_pairs_edit)) },
@@ -85,13 +89,19 @@ private fun OwnPairDialog(
                     onValueChange = { intended = it },
                     label = { Text(stringResource(R.string.typing_pairs_intended_label)) },
                     singleLine = true,
-                    supportingText = { Text(stringResource(R.string.typing_pairs_intended_hint)) }
+                    isError = duplicate,
+                    supportingText = {
+                        Text(
+                            if (duplicate) stringResource(R.string.typing_pairs_duplicate, typedWord!!, words.joinToString(", "))
+                            else stringResource(R.string.typing_pairs_intended_hint)
+                        )
+                    }
                 )
             }
         },
         confirmButton = {
             TextButton(
-                enabled = typedWord != null && words.isNotEmpty(),
+                enabled = typedWord != null && words.isNotEmpty() && !duplicate,
                 onClick = { onSave(OwnTypingPair(typedWord!!, words, original?.enabled ?: true)) }
             ) { Text(stringResource(R.string.voice_commands_save)) }
         },
@@ -320,8 +330,10 @@ private val TypingPairsList = UserSetting(name = R.string.typing_pairs_header, a
         val original = edits.own.getOrNull(idx)
         OwnPairDialog(
             original = original,
+            edits = edits,
+            index = idx.takeIf { original != null },
             onSave = { p ->
-                save(edits.copy(own = if (original == null) edits.own + p else edits.own.mapIndexed { i, x -> if (i == idx) p else x }))
+                save(edits.withOwn(p, replacing = idx.takeIf { original != null }))
                 editing = null
             },
             onDelete = original?.let { { save(edits.copy(own = edits.own.filterIndexed { i, _ -> i != idx })); editing = null } },

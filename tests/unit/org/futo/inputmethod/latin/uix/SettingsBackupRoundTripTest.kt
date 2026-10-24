@@ -17,7 +17,7 @@ import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
 /**
- * Export -> import of the parts of a settings backup that Pluto adds: its DataStore settings
+ * Export -> import of the parts of a settings backup that Pluto adds, meaning its DataStore settings
  * (voice engine, punctuation, Smart corrections switches and lists, Save dictations for tuning),
  * the typing heatmap and the hidden learned words. Entries are written and read the way
  * [SettingsExporter] does it.
@@ -112,7 +112,7 @@ class SettingsBackupRoundTripTest {
 
     @Test
     fun olderBackupWithoutPlutoSettingsStillImports() = runBlocking {
-        // A FUTO Keyboard backup: its own settings only, no heatmap or hidden-words entries.
+        // A FUTO Keyboard backup has its own settings only, no heatmap or hidden-words entries.
         val futoPrefs = mutablePreferencesOf(
             booleanPreferencesKey("animate_bubble") to false,
             stringPreferencesKey("some_futo_setting") to "x",

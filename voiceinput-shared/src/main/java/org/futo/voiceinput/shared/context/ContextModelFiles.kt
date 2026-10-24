@@ -6,9 +6,9 @@ import java.io.File
  * Files of a `context` model package (kind [org.futo.voiceinput.shared.modelpackage.ModelPackageKinds.CONTEXT]):
  *
  *   futo-model.json   kind "context", engine "qwen3-rescore", language "en"
- *   model.gguf        the judging LM (llama.cpp GGUF; a single .gguf file is also accepted)
- *   soundalike-en.lex sound-alike lexicon (SoundAlikeLexicon format 1 or 2; a single .lex file is accepted)
- *   context.json      optional thresholds (ContextRescoreConfig keys; defaults = rescore.py)
+ *   model.gguf        the judging LM (llama.cpp GGUF, and a single .gguf file is also accepted)
+ *   soundalike-en.lex sound-alike lexicon (SoundAlikeLexicon format 1 or 2, and a single .lex file is accepted)
+ *   context.json      optional thresholds (ContextRescoreConfig keys, with defaults = rescore.py)
  *   NOTICE            licenses of the model, lexicon and frequency data
  *
  * Built by tools/package-context-model.py.
@@ -67,13 +67,13 @@ object ContextModelFiles {
     }
 }
 
-/** A loaded context model: LM + lexicon + thresholds. Close it to free the model. */
+/** A loaded context model (LM + lexicon + thresholds). Close it to free the model. */
 class ContextModel private constructor(
     val lm: LlamaContextLm,
     val lexicon: SoundAlikeLexicon,
     val config: ContextRescoreConfig,
 ) : AutoCloseable {
-    /** A fresh rescorer (one per transcript; it keeps per-transcript KV state). */
+    /** A fresh rescorer (one per transcript, since it keeps per-transcript KV state). */
     fun rescorer(
         options: SmartCorrectionOptions = SmartCorrectionOptions(),
         personal: PersonalDictionary = PersonalDictionary.EMPTY,

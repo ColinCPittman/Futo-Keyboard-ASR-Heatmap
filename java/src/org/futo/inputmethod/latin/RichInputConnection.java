@@ -706,7 +706,7 @@ public final class RichInputConnection implements PrivateCommandPerformer {
         final int cursor = mExpectedSelStart;
         if (start < 0 || end > cursor || mExpectedSelEnd != cursor) return false;
         final int newCursor = cursor + text.length() - (end - start);
-        // the internal-composing wrapper types text at its own cursor and drops spans: talk to
+        // the internal-composing wrapper types text at its own cursor and drops spans, so talk to
         // the editor directly, then tell the wrapper where the cursor is
         final InputConnectionInternalComposingWrapper wrapper =
                 mIC instanceof InputConnectionInternalComposingWrapper

@@ -15,7 +15,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Rules of the Smart corrections options (no LM): candidates, the guard's checks, the lexicon. */
+/** Rules of the Smart corrections options (no LM), covering candidates, the guard's checks and the lexicon. */
 class SmartCorrectionsTest {
     // ------------------------------------------------------------------------------------
     // Numbers
@@ -68,6 +68,26 @@ class SmartCorrectionsTest {
         assertEquals(emptyList<String>(), numberSpans("That store is open twenty four seven."))
     }
 
+    @Test
+    fun amounts() {
+        // digits the voice model wrote, the unit said as a word
+        assertEquals("$800", NumberWords.digitAmountForm("800 dollars"))
+        assertEquals("$1,200", NumberWords.digitAmountForm("1,200 dollars"))
+        assertEquals("€3.50", NumberWords.digitAmountForm("3.50 euros"))
+        assertEquals("30%", NumberWords.digitAmountForm("30 percent"))
+        assertEquals("$1", NumberWords.digitAmountForm("1 dollar"))
+        assertNull(NumberWords.digitAmountForm("5 dollar"))
+        assertEquals(listOf("$800"), forms("800 dollars"))
+        assertEquals(listOf("800 dollars"), numberSpans("I made 800 dollars last week."))
+        assertEquals(listOf("1,200 dollars"), numberSpans("It costs 1,200 dollars."))
+        for (s in listOf("He paid with a 5 dollar bill.", "It was $800 dollars.", "The dollars are 800 miles away.")) {
+            assertEquals(s, emptyList<String>(), numberSpans(s))
+        }
+        // amounts with their unit are written with digits without the LM's vote, also at a sentence start
+        val groups = SpokenEdits.numberGroups(SpokenEdits.Words("Six hundred dollars profit and 40 percent off at three thirty pm."))
+        assertEquals(listOf(true, true, false), groups.sortedBy { it.start }.map { it.certain })
+    }
+
     // ------------------------------------------------------------------------------------
     // Lexicon (format version 2)
 
@@ -113,13 +133,35 @@ class SmartCorrectionsTest {
         assertEquals(listOf("Xiomara"), names.soundAlike(listOf("see", "ya", "mara")))
         assertEquals(listOf("Caitlin"), names.soundAlike(listOf("Katelyn")))
         assertEquals(emptyList<String>(), names.soundAlike(listOf("key")))  // one-sound codes are too weak
-        assertEquals(emptyList<String>(), names.soundAlike(listOf("Caitlin")))  // same spelling: nothing to do
+        assertEquals(emptyList<String>(), names.soundAlike(listOf("Caitlin")))  // same spelling, so nothing to do
         assertEquals("Xiomara", names.name("xiomara"))
         assertNull(names.name("toaster"))  // lowercase entries are not names
         assertNull(names.name("nasa"))  // nor all-caps ones
         assertTrue(names.contains("Toaster"))
         assertTrue(names.isSoundAlikeName(listOf("see", "ya", "mara"), "Xiomara"))
         assertFalse(names.isSoundAlikeName(listOf("more"), "Xiomara"))
+        // words run together need the name's main sound code, not an alternate or a silent "h"
+        val far = PersonalNames(listOf("Hadorn", "Thornton"))
+        assertEquals(emptyList<String>(), far.soundAlike(listOf("oh", "darn")))
+        assertEquals(emptyList<String>(), far.soundAlike(listOf("torn", "ton")))
+    }
+
+    @Test
+    fun sensitivityMovesMargins() {
+        val base = org.futo.voiceinput.shared.context.ContextRescoreConfig()
+        val s = org.futo.voiceinput.shared.context.SmartCorrectionSensitivity(names = -2, fillers = 1, selfCorrections = 2, quotes = 1)
+        val c = s.adjust(base)
+        assertEquals(base.nameMargin + 3.0, c.nameMargin, 1e-9)
+        assertEquals(base.fillerMargin - 1.5, c.fillerMargin, 1e-9)
+        assertEquals(base.selfCorrectionMargin - 0.8, c.selfCorrectionMargin, 1e-9)
+        assertEquals(base.wordMargin, c.wordMargin, 1e-9)
+        assertEquals(1.5, s.quoteShift(), 1e-9)
+        // out-of-range values are clamped
+        assertEquals(base.nameMargin + 3.0, s.copy(names = -9).adjust(base).nameMargin, 1e-9)
+        // typing has one setting
+        val typing = org.futo.voiceinput.shared.context.TypingCorrectionConfig()
+        assertEquals(typing.margin - 3.0, typing.withSensitivity(2).margin, 1e-9)
+        assertEquals(typing, typing.withSensitivity(0))
     }
 
     @Test
@@ -214,7 +256,7 @@ class SmartCorrectionsTest {
 
     @Test
     fun selfCorrectionCandidates() {
-        // the repair restarts with the reparandum's first word: that length only
+        // the repair restarts with the reparandum's first word (that length only)
         assertEquals(listOf("I'll take the blue one."), groups("I'll take the red one, sorry, the blue one.", Kind.SELF_CORRECTION))
         // otherwise at most as long as the repair
         assertEquals(
@@ -238,6 +280,9 @@ class SmartCorrectionsTest {
             "Sorry I'm late.", "I'm sorry for your loss.", "I'd rather stay home.", "It was actually pretty good.",
             "I'm so sorry, I didn't see you.", "No wait, I have an idea.", "The movie was good, actually.",
             "We could stay, or rather than driving, take the train.",
+            // a cue that opens the dictation corrects an earlier message, so nothing here to replace
+            "No, I mean the blue folder.", "Sorry, I meant Thursday.", "Oh, no wait, the other door.",
+            "Um, I mean the small box.", "Scratch that, the bus leaves at noon.",
         )) assertEquals(s, emptyList<String>(), groups(s, Kind.SELF_CORRECTION))
     }
 
@@ -265,7 +310,7 @@ class SmartCorrectionsTest {
     }
 
     // ------------------------------------------------------------------------------------
-    // Guard: each option's edits, and only those
+    // Guard checks each option's edits, and only those
 
     private fun check(text: String, from: String, to: String, kind: Kind): Boolean {
         val a = text.indexOf(from)
@@ -309,7 +354,7 @@ class SmartCorrectionsTest {
         // names
         assertEquals("Tell Xiomara hi.", TranscriptGuard.guard("Tell see ya mara hi.", "Tell Xiomara hi.", strict).text)
         assertEquals("Tell see ya mara hi.", TranscriptGuard.guard("Tell see ya mara hi.", "Tell Xiomara hi.", noCase).text)
-        // case-only changes away from sentence starts: only with the option; never "I"
+        // case-only changes away from sentence starts happen only with the option, and never for "I"
         assertEquals("In the toaster oven.", TranscriptGuard.guard("In the Toaster oven.", "In the toaster oven.", strict).text)
         assertEquals("In the Toaster oven.", TranscriptGuard.guard("In the Toaster oven.", "In the toaster oven.", noCase).text)
         assertEquals("So I think.", TranscriptGuard.guard("So I think.", "So i think.", strict).text)

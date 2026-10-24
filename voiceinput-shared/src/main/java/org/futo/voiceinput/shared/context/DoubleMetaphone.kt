@@ -5,7 +5,7 @@ import java.text.Normalizer
 /**
  * Double Metaphone, ported line by line from the Python `metaphone` package (0.6) that
  * tools/context-bench/guard.py uses, so that the app's sound-alike test gives exactly the
- * benchmark's answers. That includes its quirks: Python slice/index semantics, branches that
+ * benchmark's answers. That includes its quirks, such as Python slice/index semantics, branches that
  * leave the previous step's result in place, and a secondary code that may contain a space.
  *
  * Original algorithm (c) 1998, 1999 Lawrence Philips; Python version
@@ -17,11 +17,11 @@ object DoubleMetaphone {
     private const val VOWELS = "AEIOUY"
     private val SILENT_STARTERS = setOf("GN", "KN", "PN", "WR", "PS")
 
-    /** Returns (primary, secondary); secondary is "" when it equals primary. */
+    /** Returns (primary, secondary), and secondary is "" when it equals primary. */
     fun encode(input: String): Pair<String, String> = Parser(input).parse()
 
-    // A step's result: what to append to the primary / secondary code and how far to move.
-    // `three` mirrors the Python tuple length (2: same code for both, 3: separate codes).
+    // A step's result is what to append to the primary / secondary code and how far to move.
+    // `three` mirrors the Python tuple length (2 means same code for both, 3 means separate codes).
     private class Next(val p: String?, val s: String?, val adv: Int, val three: Boolean)
 
     private fun two(p: String?, adv: Int) = Next(p, null, adv, false)
@@ -231,7 +231,7 @@ object DoubleMetaphone {
         fun processJ() {
             val pos = position
             val si = startIndex
-            // codes without the step length; the length is added at the end like in Python
+            // codes without the step length, and the length is added at the end like in Python
             val p: String?
             var s: String? = null
             var isThree = false
@@ -434,7 +434,7 @@ object DoubleMetaphone {
                     c == 'W' -> processW()
                     c == 'X' -> processX()
                     c == 'Z' -> processZ()
-                    // any other character: Python leaves `next` as it was (the previous step repeats)
+                    // any other character makes Python leave `next` as it was (the previous step repeats)
                 }
                 val n = next
                 if (!n.three) {

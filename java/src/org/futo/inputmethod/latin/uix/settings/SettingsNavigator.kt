@@ -69,6 +69,7 @@ import org.futo.inputmethod.latin.uix.settings.pages.ContextModelScreen
 import org.futo.inputmethod.latin.uix.settings.pages.SmartCorrectionsMenu
 import org.futo.inputmethod.latin.uix.settings.pages.VoiceCommandsMenu
 import org.futo.inputmethod.latin.uix.settings.pages.SelfCorrectionsMenu
+import org.futo.inputmethod.latin.uix.settings.pages.SmartCorrectionsSensitivityMenu
 import org.futo.inputmethod.latin.uix.settings.pages.FillerWordsMenu
 import org.futo.inputmethod.latin.uix.settings.pages.QuotedSpeechMenu
 import org.futo.inputmethod.latin.uix.settings.pages.EmojiMenu
@@ -134,6 +135,7 @@ val SettingsMenus = listOf(
     SmartCorrectionsMenu,
     VoiceCommandsMenu,
     SelfCorrectionsMenu,
+    SmartCorrectionsSensitivityMenu,
     FillerWordsMenu,
     QuotedSpeechMenu,
     EmojiMenu,

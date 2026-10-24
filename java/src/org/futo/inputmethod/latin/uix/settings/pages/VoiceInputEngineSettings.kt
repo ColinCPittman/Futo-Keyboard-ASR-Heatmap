@@ -29,9 +29,13 @@ import org.futo.inputmethod.latin.uix.ContextModels
 import org.futo.inputmethod.latin.uix.FileKind
 import org.futo.inputmethod.latin.uix.MOONSHINE_ACCELERATOR
 import org.futo.inputmethod.latin.uix.PlutoLinks
+import org.futo.inputmethod.latin.uix.MOONSHINE_AUTO_STOP_MS
 import org.futo.inputmethod.latin.uix.MOONSHINE_LAST_TIMING
+import org.futo.inputmethod.latin.uix.MOONSHINE_LIVE_TEXT
 import org.futo.inputmethod.latin.uix.MOONSHINE_MODEL_ID
+import org.futo.inputmethod.latin.uix.MOONSHINE_REFRESH_MS
 import org.futo.inputmethod.latin.uix.MOONSHINE_THREADS
+import org.futo.inputmethod.latin.uix.USE_VAD_AUTOSTOP
 import org.futo.inputmethod.latin.uix.PUNCTUATION_MODEL_ID
 import org.futo.inputmethod.latin.uix.PUNCTUATION_RESTORATION_ENABLED
 import org.futo.inputmethod.latin.uix.PunctuationModels
@@ -79,13 +83,13 @@ import java.util.Locale
  * Fork additions to voice input settings:
  *  - which voice model (Whisper or a Moonshine package), punctuation model and context model a language uses
  *    live in Languages & Models (per language card, see [VoiceModelScreen], [PunctuationModelScreen] and
- *    [ContextModelScreen]);
+ *    [ContextModelScreen]).
  *  - the punctuation and context pass on/off switches live on the Voice Input page
- *    ([PunctuationRestorationSetting], [ContextModelSetting]);
+ *    ([PunctuationRestorationSetting], [ContextModelSetting]).
  *  - benchmarking options live under Voice Input -> Advanced options ([VoiceInputAdvancedMenu]).
  */
 
-/** Opens the system file picker for a model file or model package; the result goes to ImportResourceActivity. */
+/** Opens the system file picker for a model file or model package, and the result goes to ImportResourceActivity. */
 fun openModelPackageImporter(context: Context) {
     val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
         addCategory(Intent.CATEGORY_OPENABLE)
@@ -99,7 +103,7 @@ fun openModelPackageImporter(context: Context) {
     findActivity(context)!!.startActivityForResult(intent, IMPORT_RESOURCE_FILE_REQUEST)
 }
 
-/** Package name as shown in settings; punctuation/context packages are already under a "... Model" heading. */
+/** Package name as shown in settings, since punctuation/context packages are already under a "... Model" heading. */
 val InstalledModelPackage.displayName: String
     get() = when (kind) {
         ModelPackageKinds.PUNCTUATION -> name.removePrefix("Punctuation: ")
@@ -109,7 +113,7 @@ val InstalledModelPackage.displayName: String
 
 private val InstalledModelPackage.sizeText: String get() = "%.0f MB".format(sizeBytes / 1e6)
 
-/** Name of the voice input model [locale] uses, for the Languages & Models card; null if none. */
+/** Name of the voice input model [locale] uses, for the Languages & Models card, or null if none. */
 fun voiceInputModelDisplayName(context: Context, locale: Locale): String? {
     if (locale.language == "en" && context.getSetting(VOICE_INPUT_ENGINE) == VOICE_ENGINE_MOONSHINE) {
         VoiceInputEngines.selectedMoonshineModel(context)?.let { return it.name }
@@ -119,7 +123,7 @@ fun voiceInputModelDisplayName(context: Context, locale: Locale): String? {
 
 /**
  * Whether English voice input runs on Whisper (picked, or the fallback when no Moonshine model is installed).
- * Whisper punctuates itself and rarely mishears words: the punctuation pass is skipped after Whisper, and
+ * Whisper punctuates itself and rarely mishears words, so the punctuation pass is skipped after Whisper, and
  * Smart corrections mostly add delay; their settings say so.
  */
 @Composable
@@ -131,21 +135,21 @@ internal fun whisperIsVoiceModel(): Boolean {
     return engine != VOICE_ENGINE_MOONSHINE || !hasMoonshine
 }
 
-/** Name of the punctuation model [locale] uses, for the Languages & Models card; null if none. */
+/** Name of the punctuation model [locale] uses, for the Languages & Models card, or null if none. */
 fun punctuationModelDisplayName(context: Context, locale: Locale): String? {
     if (!context.getSetting(PUNCTUATION_RESTORATION_ENABLED)) return null
     val pkg = PunctuationModels.selected(context) ?: return null
     return if (PunctuationModels.supportsLocale(pkg, locale)) pkg.displayName else null
 }
 
-/** Name of the context model [locale] uses, for the Languages & Models card; null if none. */
+/** Name of the context model [locale] uses, for the Languages & Models card, or null if none. */
 fun contextModelDisplayName(context: Context, locale: Locale): String? {
     if (!context.getSetting(CONTEXT_MODEL_ENABLED)) return null
     val pkg = ContextModels.selected(context) ?: return null
     return if (ContextModels.supportsLocale(pkg, locale)) pkg.displayName else null
 }
 
-/** Pluto: link to the release page with Pluto's model packages (opens the browser; the app has no internet access). */
+/** Pluto: link to the release page with Pluto's model packages (opens the browser, because the app has no internet access). */
 @Composable
 private fun PlutoReleasePageItem() {
     val context = LocalContext.current
@@ -198,7 +202,7 @@ private fun DeleteModelPackageDialog(pkg: InstalledModelPackage, onDismiss: () -
     )
 }
 
-/** Languages & Models -> Voice Input Model: choose between Whisper and installed Moonshine models for [locale]. */
+/** Languages & Models -> Voice Input Model, to choose between Whisper and installed Moonshine models for [locale]. */
 @Composable
 fun VoiceModelScreen(navController: NavHostController, locale: Locale) {
     val context = LocalContext.current
@@ -281,7 +285,7 @@ fun VoiceModelScreen(navController: NavHostController, locale: Locale) {
     }
 }
 
-/** Languages & Models -> Punctuation Model: choose the punctuation model used after dictation for [locale]. */
+/** Languages & Models -> Punctuation Model, to choose the punctuation model used after dictation for [locale]. */
 @Composable
 fun PunctuationModelScreen(navController: NavHostController, locale: Locale) {
     val context = LocalContext.current
@@ -349,7 +353,7 @@ fun PunctuationModelScreen(navController: NavHostController, locale: Locale) {
     }
 }
 
-/** Languages & Models -> Context Model: choose the model that fixes misheard words after dictation for [locale]. */
+/** Languages & Models -> Context Model, to choose the model that fixes misheard words after dictation for [locale]. */
 @Composable
 fun ContextModelScreen(navController: NavHostController, locale: Locale) {
     val context = LocalContext.current
@@ -420,7 +424,7 @@ internal val visibilityCheckBuiltinVoiceInput = @Composable {
     useDataStoreValue(USE_SYSTEM_VOICE_INPUT) == false
 }
 
-/** Voice Input page: turns the punctuation second pass on or off (the model is chosen in Languages & Models). */
+/** Voice Input page, which turns the punctuation second pass on or off (the model is chosen in Languages & Models). */
 val PunctuationRestorationSetting = UserSetting(
     name = R.string.voice_input_settings_punctuation,
     subtitle = R.string.voice_input_settings_punctuation_subtitle,
@@ -451,27 +455,118 @@ private fun <T> DropDownSetting(
     options: List<T>,
     selection: T?,
     onSet: (T) -> Unit,
-    getDisplayName: (T) -> String
+    getDisplayName: (T) -> String,
+    disabled: Boolean = false
 ) {
     // SettingItem shows either a subtitle or subcontent, so the description goes into the subcontent
     SettingItem(
         title = title,
+        disabled = disabled,
         subcontent = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (subtitle != null) {
                     Text(subtitle, style = Typography.SmallMl, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                DropDownPicker(options, selection, onSet, getDisplayName)
+                DropDownPicker(options, selection, onSet, getDisplayName, enabled = !disabled)
             }
         }
     ) { }
 }
 
-/** Voice Input -> Advanced options: benchmarking knobs for Moonshine on ONNX Runtime. */
+/** Auto-stop choice "off" in the Moonshine stop-after-silence picker. */
+private const val AUTO_STOP_OFF = 0
+
+/**
+ * Voice Input -> Advanced options, covering how Moonshine streams (live text, refresh rate, stop after
+ * silence, greyed out unless a Moonshine model is the voice model) and benchmarking knobs for
+ * Moonshine on ONNX Runtime.
+ */
 val VoiceInputAdvancedMenu = UserSettingsMenu(
     title = R.string.voice_input_advanced_title,
     navPath = "voiceInputAdvanced", registerNavPath = true,
     settings = listOf(
+        userSettingDecorationOnly {
+            SectionLabel(stringResource(R.string.voice_input_advanced_section_live))
+            if (whisperIsVoiceModel()) Tip(stringResource(R.string.voice_input_advanced_needs_moonshine))
+        },
+
+        UserSetting(
+            name = R.string.voice_input_settings_moonshine_live_text,
+            subtitle = R.string.voice_input_settings_moonshine_live_text_subtitle
+        ) {
+            SettingToggleDataStore(
+                title = stringResource(R.string.voice_input_settings_moonshine_live_text),
+                subtitle = stringResource(R.string.voice_input_settings_moonshine_live_text_subtitle),
+                setting = MOONSHINE_LIVE_TEXT,
+                disabled = whisperIsVoiceModel()
+            )
+        },
+
+        UserSetting(
+            name = R.string.voice_input_settings_moonshine_refresh,
+            subtitle = R.string.voice_input_settings_moonshine_refresh_subtitle
+        ) {
+            val refresh = useDataStore(MOONSHINE_REFRESH_MS)
+            val liveText = useDataStoreValue(MOONSHINE_LIVE_TEXT)
+            val res = LocalResources.current
+            val choices = VoiceInputEngines.REFRESH_CHOICES_MS
+            DropDownSetting(
+                title = stringResource(R.string.voice_input_settings_moonshine_refresh),
+                subtitle = stringResource(R.string.voice_input_settings_moonshine_refresh_subtitle),
+                options = choices,
+                selection = choices.minBy { kotlin.math.abs(it - refresh.value) },
+                onSet = { refresh.setValue(it) },
+                getDisplayName = {
+                    res.getString(
+                        when (it) {
+                            250 -> R.string.voice_input_settings_moonshine_refresh_fast
+                            500 -> R.string.voice_input_settings_moonshine_refresh_normal
+                            else -> R.string.voice_input_settings_moonshine_refresh_slow
+                        },
+                        it / 1000f
+                    )
+                },
+                disabled = whisperIsVoiceModel() || !liveText
+            )
+        },
+
+        UserSetting(
+            name = R.string.voice_input_settings_moonshine_auto_stop,
+            subtitle = R.string.voice_input_settings_moonshine_auto_stop_subtitle
+        ) {
+            val autoStop = useDataStore(USE_VAD_AUTOSTOP)
+            val silence = useDataStore(MOONSHINE_AUTO_STOP_MS)
+            val res = LocalResources.current
+            val choices = listOf(AUTO_STOP_OFF) + VoiceInputEngines.AUTO_STOP_CHOICES_MS
+            DropDownSetting(
+                title = stringResource(R.string.voice_input_settings_moonshine_auto_stop),
+                subtitle = stringResource(R.string.voice_input_settings_moonshine_auto_stop_subtitle),
+                options = choices,
+                selection = if (!autoStop.value) AUTO_STOP_OFF
+                    else VoiceInputEngines.AUTO_STOP_CHOICES_MS.minBy { kotlin.math.abs(it - silence.value) },
+                onSet = {
+                    if (it == AUTO_STOP_OFF) {
+                        autoStop.setValue(false)
+                    } else {
+                        silence.setValue(it)
+                        autoStop.setValue(true)
+                    }
+                },
+                getDisplayName = {
+                    when (it) {
+                        AUTO_STOP_OFF -> res.getString(R.string.voice_input_settings_moonshine_auto_stop_off)
+                        2000 -> res.getString(R.string.voice_input_settings_moonshine_auto_stop_default, it / 1000f)
+                        else -> res.getString(R.string.voice_input_settings_moonshine_auto_stop_seconds, it / 1000f)
+                    }
+                },
+                disabled = whisperIsVoiceModel()
+            )
+        },
+
+        userSettingDecorationOnly {
+            SectionLabel(stringResource(R.string.voice_input_advanced_section_speed))
+        },
+
         UserSetting(
             name = R.string.voice_input_settings_moonshine_accelerator,
             subtitle = R.string.voice_input_settings_moonshine_accelerator_subtitle

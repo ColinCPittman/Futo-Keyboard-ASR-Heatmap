@@ -762,12 +762,12 @@ class ImportResourceActivity : ComponentActivity() {
                             applicationContext.setSetting(MOONSHINE_MODEL_ID, installed.id)
                             applicationContext.setSetting(VOICE_INPUT_ENGINE, VOICE_ENGINE_MOONSHINE)
                         }
-                        // Same for punctuation models; importing one also turns the second pass on.
+                        // Same for punctuation models, and importing one also turns the second pass on.
                         if (installed.kind == ModelPackageKinds.PUNCTUATION) {
                             applicationContext.setSetting(PUNCTUATION_MODEL_ID, installed.id)
                             applicationContext.setSetting(PUNCTUATION_RESTORATION_ENABLED, true)
                         }
-                        // And for context models (the third pass): select it and turn the pass on.
+                        // And the same for context models (the third pass), selecting it and turning the pass on.
                         if (installed.kind == ModelPackageKinds.CONTEXT) {
                             ContextModels.release()
                             applicationContext.setSetting(CONTEXT_MODEL_ID, installed.id)

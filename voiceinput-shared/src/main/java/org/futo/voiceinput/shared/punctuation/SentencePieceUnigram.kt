@@ -6,7 +6,7 @@ import java.io.File
  * Minimal SentencePiece *unigram* tokenizer that loads an original `.model` file (a serialized
  * sentencepiece ModelProto) without any native code.
  *
- * Supported: model_type UNIGRAM, identity normalizer (no precompiled charsmap), add_dummy_prefix,
+ * This supports model_type UNIGRAM, identity normalizer (no precompiled charsmap), add_dummy_prefix,
  * whitespace -> U+2581, unknown characters mapped to the unk piece (no byte fallback).
  * This is exactly what `spe_32k_lc_en.model` (punctuation_fullstop_truecase_english) requires.
  *
@@ -69,7 +69,7 @@ internal class SentencePieceUnigram private constructor(
         }
 
         // SentencePiece breaks score ties in favour of the candidate with the earliest start
-        // (longest piece): iterate starts ascending and replace only on a strictly better score.
+        // (longest piece), so iterate starts ascending and replace only on a strictly better score.
         for (end in 1..n) {
             val minStart = maxOf(0, end - maxPieceCodePoints)
             for (start in minStart until end) {

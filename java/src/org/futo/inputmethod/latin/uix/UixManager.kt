@@ -81,6 +81,7 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.ComposeView
@@ -623,6 +624,9 @@ class UixManager(private val latinIME: LatinIME) {
     private var numSuggestionsSinceNotice = 0
     private var currentNotice: MutableState<ImportantNotice?> = mutableStateOf(null)
 
+    /** Where the keys start below the bars, in the keyboard window (for the feature tip card). */
+    private val keysTop = mutableIntStateOf(0)
+
     private var inlineStuffHiddenByTyping = mutableStateOf(false)
 
     private var isActionsExpanded = mutableStateOf(false)
@@ -753,7 +757,8 @@ class UixManager(private val latinIME: LatinIME) {
                     needToUseExpandableSuggestionUi = needToUseExpandableSuggestionUi,
                     loading = latinIME.imeManager.isImeLoading(),
                     typingFixes = if (TypingFixes.hiddenWhileTyping.value) emptyList() else TypingFixes.fixes.value,
-                    onOpenTypingFixes = { onActionActivatedInternal(TypingFixListAction, skipOverride = true) }
+                    onOpenTypingFixes = { onActionActivatedInternal(TypingFixListAction, skipOverride = true) },
+                    onAddCorrection = { onActionActivatedInternal(AddCorrectionAction, skipOverride = true) }
                 )
             }
         }
@@ -1321,7 +1326,7 @@ class UixManager(private val latinIME: LatinIME) {
 
                     val kbHeight = remember { mutableIntStateOf(latinIME.size.value!!.height) }
                     val keyboardViewOffset = remember(needToUseExpandableSuggestionUi) { mutableIntStateOf(0) }
-                    Box(Modifier.let {
+                    Box(Modifier.onGloballyPositioned { keysTop.intValue = it.positionInParent().y.roundToInt() }.let {
                         if(needToUseExpandableSuggestionUi) {
                             it.height(
                                 with(LocalDensity.current) { kbHeight.intValue.toDp() }
@@ -1366,6 +1371,14 @@ class UixManager(private val latinIME: LatinIME) {
                 }
 
                 ForgetWordDialog()
+
+                // a first-time tip, over the top of the keys, so the bars above (with the
+                // button it is often about) stay visible
+                FeatureTipCard(
+                    Modifier
+                        .align(Alignment.TopCenter)
+                        .offset { IntOffset(0, keysTop.intValue + 4.dp.roundToPx()) }
+                )
             }
 
             ActionEditorHost()
@@ -1559,7 +1572,7 @@ class UixManager(private val latinIME: LatinIME) {
         }
     }
 
-    /** Pluto: long-press on a suggestion: add it to the Android personal dictionary, or forget it. */
+    /** Pluto: long-press on a suggestion to add it to the Android personal dictionary, or forget it. */
     private fun showSuggestionMenu(suggestedWordInfo: SuggestedWordInfo) {
         val word = suggestedWordInfo.mWord ?: return
         keyboardManagerForAction.requestDialog(
@@ -1568,7 +1581,7 @@ class UixManager(private val latinIME: LatinIME) {
                 DialogRequestItem(latinIME.getString(R.string.cancel)) { },
                 DialogRequestItem(latinIME.getString(R.string.pluto_suggestion_menu_add)) {
                     if(SensitiveWords.looksSensitive(word)) {
-                        // Ask again: the personal dictionary can be read by other apps.
+                        // Ask again, because the personal dictionary can be read by other apps.
                         latinIME.lifecycleScope.launch(Dispatchers.Main) {
                             keyboardManagerForAction.requestDialog(
                                 latinIME.getString(R.string.pluto_suggestion_menu_add_sensitive_warning, word),
@@ -1615,8 +1628,8 @@ class UixManager(private val latinIME: LatinIME) {
     private var sensitiveNoticeShownAt = 0L
 
     /**
-     * Pluto: strip notice after the user picked a password-like typed word: it was typed but not
-     * learned. Tapping the notice learns it anyway. Stays at least a moment (the strip updates with
+     * Pluto: strip notice after the user picked a password-like typed word (it was typed but not
+     * learned). Tapping the notice learns it anyway. Stays at least a moment (the strip updates with
      * next-word predictions right after the pick) and goes away by itself.
      */
     fun showSensitiveWordNotRemembered(word: String, rememberAnyway: () -> Unit) {

@@ -62,7 +62,7 @@ public class SuggestedWords {
     // whether this exactly matches the user entry or not.
     public boolean mWillAutoCorrect;
     // True when these words were produced in "always use the middle suggestion" mode. In this mode
-    // the middle slot of the suggestion strip always shows what will be committed on separator:
+    // the middle slot of the suggestion strip always shows what will be committed on separator, which is
     // the auto-correction (info at INDEX_OF_AUTO_CORRECTION) if mWillAutoCorrect, otherwise the
     // typed word itself. See Suggest#obtainNonBatchedInputSuggestedWords.
     public boolean mAlwaysUseMiddleSuggestion = false;

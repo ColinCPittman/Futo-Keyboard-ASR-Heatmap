@@ -10,37 +10,66 @@ data class TypingCorrectionConfig(
     val openingMargin: Double = 3.0,
     /** The words after the swapped one must not get less likely than this (log-prob change). */
     val tailMin: Double = -1.5,
-    /** Sentences with fewer words are not checked (too little to go on: "Than what?"). */
+    /** Sentences with fewer words are not checked (too little to go on, like "Than what?"). */
     val minWords: Int = 3,
     /** Before its sentence ends, a word is checked once this many words follow it. */
     val earlyWords: Int = 3,
     /**
      * A candidate is scored only if its first token is at most this much less likely than the
-     * typed word's where it starts (one pass for all); 0 scores them all.
+     * typed word's where it starts (one pass for all), and 0 scores them all.
      */
     val probeDrop: Double = 6.0,
     /** "then" right after a comparative ("taller then her") needs this much less than [margin]. */
     val comparativeRelief: Double = 3.5,
+    /** A pair the user added themselves needs this much less than [margin], because they know it's their slip ... */
+    val ownRelief: Double = 4.0,
+    /** ... but always at least this much (the swapped text must still be clearly more likely). */
+    val ownMinNeed: Double = 1.5,
     /** Characters of text before the checked sentence that are scored with it. */
     val leftChars: Int = 300,
-)
+    /** Fix typos that are real words (the typing pairs). */
+    val realWords: Boolean = true,
+    /** Attempt to fix missed typos, meaning words no dictionary knows ("ststy" -> "start"). */
+    val missedTypos: Boolean = false,
+    /** Log-prob a missed typo's candidate loses per unit of [KeyboardTypos.cost] (how unlikely the slip is). */
+    val typoUnit: Double = 2.0,
+    /** Candidates of a missed typo at most this far ([KeyboardTypos.cost]) from what was typed. */
+    val maxTypoCost: Double = 4.0,
+    /** At most this many candidates per missed typo are scored (the cheapest slips). */
+    val maxTypoCandidates: Int = 10,
+    /** The best candidate's score (LM gain minus slip cost) must reach this ... */
+    val missedNeed: Double = 2.0,
+    /** ... and beat the runner-up by this much (otherwise it is a guess). */
+    val missedMargin: Double = 3.0,
+    /** A missed typo shorter than 5 letters needs this much more per missing letter. */
+    val shortWordNeed: Double = 2.0,
+) {
+    /** This config with [margin] moved by the "Sensitivity" setting (see [SmartCorrectionSensitivity]). */
+    fun withSensitivity(steps: Int): TypingCorrectionConfig {
+        val d = steps.coerceIn(SmartCorrectionSensitivity.MIN, SmartCorrectionSensitivity.MAX) * SmartCorrectionSensitivity.STEP
+        return copy(margin = margin - d, missedNeed = missedNeed - d, missedMargin = maxOf(0.5, missedMargin - d / 2))
+    }
+}
 
 /**
- * Smart corrections for typing: re-checks a finished sentence for real-word typos
+ * Smart corrections for typing re-check a finished sentence for real-word typos
  * ("some new salt an pepper" -> "and") with the context LM, which reads the whole sentence,
  * including the words after the typo that make it obvious.
  *
- * Candidates are one-key-off swaps from [TypingConfusions]; each is scored as the whole text
+ * Candidates are one-key-off swaps from [TypingConfusions], and each is scored as the whole text
  * (the sentence after [TypingCorrectionConfig.leftChars] of what came before). At most one
- * swap per sentence is returned: the one that raises the log-prob most, if it beats the margin.
+ * swap per sentence is returned (the one that raises the log-prob most, if it beats the margin).
  */
 class TypingCorrector(
     lm: ContextLm,
     private val confusions: TypingConfusions = TypingConfusions.builtIn,
     val config: TypingCorrectionConfig = TypingCorrectionConfig(),
+    /** Its lowercase words are the candidates for missed typos ([TypingCorrectionConfig.missedTypos]). */
+    private val lexicon: SoundAlikeLexicon? = null,
     /**
-     * Extra margin for a swap the user reverted before: (original, replacement, previous word,
-     * next word), all lowercase ("" at an edge) -> log-prob.
+     * Extra margin for a swap the user reverted before, or less for one they made themselves
+     * where it was missed, keyed by (original, replacement, previous word, next word), all lowercase ("" at
+     * an edge), with the log-prob as the value.
      */
     private val caution: (String, String, String, String) -> Double = { _, _, _, _ -> 0.0 },
 ) {
@@ -63,10 +92,11 @@ class TypingCorrector(
     private val word = Regex("[A-Za-z]+(?:'[A-Za-z]+)?")
 
     /**
-     * Checks the words of [text] in [from]..[to] (the finished sentence; what's before it is
+     * Checks the words of [text] in [from]..[to] (the finished sentence, and what's before it is
      * context). [skip] tells which word starts must not change (corrected by hand, reverted).
      * While the sentence is not [finished], only words with [TypingCorrectionConfig.earlyWords]
-     * words after them are candidates.
+     * words after them are candidates. [unknown] tells which word starts are words no dictionary
+     * knows (missed typos, and the keyboard checks its own dictionaries and your words).
      */
     fun check(
         text: String,
@@ -75,27 +105,36 @@ class TypingCorrector(
         finished: Boolean = true,
         skip: (Int) -> Boolean = { false },
         checkpoint: () -> Unit = {},
+        unknown: (Int) -> Boolean = { false },
     ): Result {
         val trace = ArrayList<String>()
         scorer.timings.clear()
-        // the scored text: up to leftChars before the sentence, cut at a word start
+        // the scored text is up to leftChars before the sentence, cut at a word start
         var cut = maxOf(0, from - config.leftChars)
         if (cut > 0) {
             while (cut < from && !text[cut - 1].isWhitespace()) cut++
         }
         val scored = text.substring(cut, to)
 
-        class Cand(val m: MatchResult, val replacement: String, val variant: String)
+        /** [typoCost] is, for a missed typo, how unlikely the slip is ([KeyboardTypos.cost]), and null for a pair. */
+        class Cand(val m: MatchResult, val replacement: String, val variant: String, val typoCost: Double? = null)
         val cands = ArrayList<Cand>()
         val words = word.findAll(text, 0).filter { it.range.last < to }.toList()
         if (words.count { it.range.first >= from } < config.minWords) return Result(null, trace, emptyList())
         for ((wi, m) in words.withIndex()) {
             if (m.range.first < from || skip(m.range.first)) continue
             if (!finished && words.size - 1 - wi < config.earlyWords) continue
-            for (c in confusions.candidates(m.value)) {
+            val s = m.range.first - cut
+            if (config.realWords) for (c in confusions.candidates(m.value)) {
                 val rep = matchCase(m.value, c)
-                val s = m.range.first - cut
                 cands.add(Cand(m, rep, scored.substring(0, s) + rep + scored.substring(s + m.value.length)))
+            }
+            // a word no dictionary knows, so the real words it may be a slip of (finished sentences only)
+            if (config.missedTypos && finished && lexicon != null && missedTypoShape(text, m) && !confusions.isNever(m.value) && unknown(m.range.first) && !lexicon.knows(m.value)) {
+                for ((c, cost) in KeyboardTypos.candidates(m.value, lexicon.lowercaseWords, config.maxTypoCost, config.maxTypoCandidates)) {
+                    val rep = matchCase(m.value, c)
+                    cands.add(Cand(m, rep, scored.substring(0, s) + rep + scored.substring(s + m.value.length), cost))
+                }
             }
         }
         if (cands.isEmpty()) return Result(null, trace, emptyList())
@@ -108,7 +147,7 @@ class TypingCorrector(
             val kept = groups.flatMapIndexed { gi, (_, cs) ->
                 val pr = detail.probes.getOrNull(gi)
                 if (pr == null || pr.size != cs.size + 1) cs
-                else cs.filterIndexed { k, _ -> pr[k] >= pr[cs.size] - config.probeDrop }
+                else cs.filterIndexed { k, c -> c.typoCost != null || pr[k] >= pr[cs.size] - config.probeDrop || confusions.isOwn(c.m.value, c.replacement) }
             }
             if (kept.size < cands.size) trace.add("probe kept ${kept.size}/${cands.size}")
             cands.retainAll(kept.toSet())
@@ -119,10 +158,19 @@ class TypingCorrector(
         val base = res[0]
         var best: Fix? = null
         var bestOver = 0.0
+        // missed typos are checked per word, taking the best candidate (LM gain minus slip cost) against the runner-up
+        class Scored(val c: Cand, val gain: Double, val tail: Double, val score: Double)
+        val typoScores = HashMap<MatchResult, MutableList<Scored>>()
         for ((i, c) in cands.withIndex()) {
             val v = res[i + 1]
             val gain = v.total - base.total
-            // the words after the swap: the tokens both texts end with
+            val cost = c.typoCost
+            if (cost != null) {
+                val score = gain - cost * config.typoUnit
+                typoScores.getOrPut(c.m) { ArrayList() }.add(Scored(c, gain, 0.0, score))
+                continue
+            }
+            // the words after the swap are the tokens both texts end with
             var n = 0
             while (n < v.tokens.size && n < base.tokens.size &&
                 v.tokens[v.tokens.size - 1 - n] == base.tokens[base.tokens.size - 1 - n]) n++
@@ -135,9 +183,14 @@ class TypingCorrector(
             val comparative = c.m.value.equals("then", true) && c.replacement.equals("than", true) &&
                 prev != null && isComparative(prev.value) &&
                 next != null && gapAt(text, c.m, next).none { ch -> !ch.isWhitespace() }
-            val need = config.margin + (if (opening) config.openingMargin else 0.0) -
-                (if (comparative) config.comparativeRelief else 0.0) +
-                caution(c.m.value.lowercase(), c.replacement.lowercase(), prev?.value?.lowercase() ?: "", next?.value?.lowercase() ?: "")
+            var base = config.margin + (if (opening) config.openingMargin else 0.0) -
+                (if (comparative) config.comparativeRelief else 0.0)
+            if (confusions.isOwn(c.m.value, c.replacement)) base = maxOf(base - config.ownRelief, config.ownMinNeed)
+            // what was learned may make it more careful, or more ready down to the floor of your own pairs
+            val need = maxOf(
+                base + caution(c.m.value.lowercase(), c.replacement.lowercase(), prev?.value?.lowercase() ?: "", next?.value?.lowercase() ?: ""),
+                config.ownMinNeed,
+            )
             val ok = gain >= need && tail >= config.tailMin
             trace.add("${c.m.value}->${c.replacement} gain=%.2f tail=%.2f need=%.2f%s".format(gain, tail, need, if (ok) " OK" else ""))
             if (ok && gain - need > bestOver) {
@@ -145,7 +198,37 @@ class TypingCorrector(
                 best = Fix(c.m.range.first, c.m.range.last + 1, c.m.value, c.replacement, gain, tail)
             }
         }
+        for ((m, list) in typoScores) {
+            val sorted = list.sortedByDescending { it.score }
+            val top = sorted[0]
+            val runnerUp = sorted.getOrNull(1)?.score ?: Double.NEGATIVE_INFINITY
+            val idx = words.indexOf(m)
+            val prev = words.getOrNull(idx - 1)?.takeIf { gapAt(text, it, m).none { ch -> ch in ".?!\n" } }
+            val next = words.getOrNull(idx + 1)
+            val learned = caution(m.value.lowercase(), top.c.replacement.lowercase(), prev?.value?.lowercase() ?: "", next?.value?.lowercase() ?: "")
+            // short words have many neighbours, and are often abbreviations ("brb", "ttyl")
+            val need = config.missedNeed + learned + maxOf(0, SHORT_WORD - m.value.length) * config.shortWordNeed
+            val margin = config.missedMargin + maxOf(0.0, learned)
+            val over = minOf(top.score - need, top.score - runnerUp - margin)
+            trace.add(sorted.take(3).joinToString(" ") { "${m.value}->${it.c.replacement} gain=%.2f score=%.2f".format(it.gain, it.score) } +
+                " need=%.2f margin=%.2f%s".format(need, margin, if (over >= 0) " OK" else ""))
+            if (over >= 0 && (best == null || over > bestOver)) {
+                bestOver = over
+                best = Fix(m.range.first, m.range.last + 1, m.value, top.c.replacement, top.gain, 0.0)
+            }
+        }
         return Result(best, trace, scorer.timings.toList())
+    }
+
+    /**
+     * A word that may be a missed typo has letters only, at least 3, all lowercase, or capitalized
+     * only where a sentence starts (a capital elsewhere is a name, and all caps is an acronym).
+     */
+    private fun missedTypoShape(text: String, m: MatchResult): Boolean {
+        val w = m.value
+        if (w.length < 3 || !w.all { it.isLetter() }) return false
+        if (w.drop(1).any { it.isUpperCase() }) return false
+        return !w[0].isUpperCase() || opensSentence(text, m.range.first)
     }
 
     private fun isComparative(w: String): Boolean {
@@ -163,6 +246,9 @@ class TypingCorrector(
     }
 
     companion object {
+        /** Missed typos shorter than this need more ([TypingCorrectionConfig.shortWordNeed]). */
+        private const val SHORT_WORD = 5
+
         private val COMPARATIVES = setOf("more", "less", "better", "worse", "rather", "other", "further", "else")
 
         fun matchCase(src: String, dst: String): String = when {
@@ -173,7 +259,7 @@ class TypingCorrector(
 
         private val sentenceEnd = Regex("[.?!]+[\"')]*(?=\\s|$)|\\n")
 
-        /** Start and end of each sentence of [text] (end after its final mark; the last may have none). */
+        /** Start and end of each sentence of [text] (end after its final mark, and the last may have none). */
         fun sentences(text: String): List<IntRange> {
             val out = ArrayList<IntRange>()
             var s = 0

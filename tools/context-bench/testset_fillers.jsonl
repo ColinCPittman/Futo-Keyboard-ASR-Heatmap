@@ -42,7 +42,7 @@
 {"id": "flqn2", "cat": "control", "input": "Ah, that makes sense.", "expected": "Ah, that makes sense."}
 {"id": "flqn3", "cat": "control", "input": "Eh, it's fine.", "expected": "Eh, it's fine."}
 {"id": "flqn4", "cat": "control", "input": "Ah ha, I found it.", "expected": "Ah ha, I found it."}
-{"id": "fp01", "cat": "filler", "input": "I was, you know, thinking about moving.", "expected": "I was thinking about moving.", "alts": ["I was, thinking about moving."]}
+{"id": "fp01", "cat": "control", "input": "I was, you know, thinking about moving.", "expected": "I was, you know, thinking about moving."}
 {"id": "fp02", "cat": "filler", "input": "It's, like, really far from here.", "expected": "It's really far from here.", "alts": ["It's, really far from here."]}
 {"id": "fp03", "cat": "filler", "input": "The food was, kind of, cold.", "expected": "The food was cold.", "alts": ["The food was, cold."]}
 {"id": "fp04", "cat": "filler", "input": "We're, sort of, running late.", "expected": "We're running late.", "alts": ["We're, running late."]}
@@ -51,7 +51,7 @@
 {"id": "fp07", "cat": "filler", "input": "We drove home after that, so yeah.", "expected": "We drove home after that."}
 {"id": "fp08", "cat": "filler", "input": "The party ended early. So yeah.", "expected": "The party ended early."}
 {"id": "fp09", "cat": "filler", "input": "It's, you see, a bit complicated.", "expected": "It's a bit complicated.", "alts": ["It's, a bit complicated."]}
-{"id": "fp10", "cat": "filler", "input": "I was, like, you know, totally lost.", "expected": "I was totally lost.", "alts": ["I was, totally lost."]}
+{"id": "fp10", "cat": "filler", "input": "I was, like, you know, totally lost.", "expected": "I was, you know, totally lost.", "alts": ["I was, like, you know, totally lost."]}
 {"id": "fp11", "cat": "filler", "input": "Is it, like, a big deal?", "expected": "Is it a big deal?", "alts": ["Is it, a big deal?"]}
 {"id": "fp12", "cat": "filler", "input": "The new place is, kinda, small.", "expected": "The new place is small.", "alts": ["The new place is, small."]}
 {"id": "fpn01", "cat": "control", "input": "I like it a lot.", "expected": "I like it a lot."}
@@ -84,7 +84,7 @@
 {"id": "fpn28", "cat": "control", "input": "What do you see, Sam?", "expected": "What do you see, Sam?"}
 {"id": "fpn29", "cat": "control", "input": "I'm sort of a night owl.", "expected": "I'm sort of a night owl."}
 {"id": "fpn30", "cat": "control", "input": "He kinda likes her.", "expected": "He kinda likes her."}
-{"id": "fp13", "cat": "filler", "input": "Do you, you know, want to come along?", "expected": "Do you want to come along?", "alts": ["Do you, want to come along?"]}
+{"id": "fp13", "cat": "control", "input": "Do you, you know, want to come along?", "expected": "Do you, you know, want to come along?"}
 {"id": "fpn31", "cat": "control", "input": "It took, like, 5 minutes.", "expected": "It took, like, 5 minutes."}
 {"id": "fpn32", "cat": "control", "input": "We waited, like, ten minutes.", "expected": "We waited, like, ten minutes."}
 {"id": "fpn33", "cat": "control", "input": "Is it the kind of thing, you know?", "expected": "Is it the kind of thing, you know?"}

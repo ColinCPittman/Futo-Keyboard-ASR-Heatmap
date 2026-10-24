@@ -149,6 +149,6 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1'
 
     // Moonshine streaming speech recognition and punctuation restoration (imported ONNX models).
-    // Full build: CPU, XNNPACK and NNAPI execution providers.
+    // Full build with CPU, XNNPACK and NNAPI execution providers.
     api 'com.microsoft.onnxruntime:onnxruntime-android:1.31.0'
 }

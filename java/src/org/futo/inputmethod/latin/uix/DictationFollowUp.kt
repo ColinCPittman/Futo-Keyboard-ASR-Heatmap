@@ -7,7 +7,7 @@ import org.futo.inputmethod.latin.LatinIME
 import org.futo.voiceinput.shared.context.DictationAlignment
 
 /**
- * Part of the developer setting "Save dictations for tuning": remembers the last inserted dictation
+ * Part of the developer setting "Save dictations for tuning". It remembers the last inserted dictation
  * and where it went, and later (when the field is left, the keyboard is hidden, the next dictation
  * starts, or after [DELAY_MS]) reads that span back to record what the user corrected it to
  * ([DictationRecorder.addCorrection]). Nothing is kept or read while the setting is off, and the
@@ -28,7 +28,7 @@ object DictationFollowUp {
     private val handler = Handler(Looper.getMainLooper())
     private val timeout = Runnable { check() }
 
-    /** Called after a dictation was inserted; [beforeCursor]/[afterCursor] are the text around it before the insert. */
+    /** Called after a dictation was inserted, and [beforeCursor]/[afterCursor] are the text around it before the insert. */
     fun arm(ime: LatinIME, inserted: String, beforeCursor: CharSequence?, afterCursor: CharSequence?) {
         if (!DictationRecorder.isEnabled(ime.applicationContext)) return
         val time = DictationRecorder.lastTime

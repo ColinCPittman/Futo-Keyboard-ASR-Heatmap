@@ -96,10 +96,15 @@
 {"id": "spn26", "cat": "control", "input": "I forgot the keys, my bad.", "expected": "I forgot the keys, my bad."}
 {"id": "spn27", "cat": "control", "input": "I spilled it, oops, sorry.", "expected": "I spilled it, oops, sorry."}
 {"id": "spn28", "cat": "control", "input": "Hit save, oops, too late.", "expected": "Hit save, oops, too late."}
-{"id": "spn29", "cat": "control", "input": "Five dollars, make it snappy.", "expected": "Five dollars, make it snappy."}
+{"id": "spn29", "cat": "control", "input": "Five bucks, make it snappy.", "expected": "Five bucks, make it snappy."}
 {"id": "spn30", "cat": "control", "input": "Is it Tuesday, nope, it's Wednesday.", "expected": "Is it Tuesday, nope, it's Wednesday."}
 {"id": "spn31", "cat": "control", "input": "Thanks, well actually, never mind.", "expected": "Thanks, well actually, never mind."}
 {"id": "spn32", "cat": "control", "input": "I'll come, actually no, wait.", "expected": "I'll come, actually no, wait."}
 {"id": "spn33", "cat": "control", "input": "Oops, my mistake.", "expected": "Oops, my mistake."}
 {"id": "spn34", "cat": "control", "input": "Call me, my bad, tomorrow works better.", "expected": "Call me, my bad, tomorrow works better."}
 {"id": "spn35", "cat": "control", "input": "Nope, nope, nope.", "expected": "Nope, nope, nope."}
+{"id": "spn_open1", "cat": "control", "input": "No, I mean the blue folder on the desk.", "expected": "No, I mean the blue folder on the desk."}
+{"id": "spn_open2", "cat": "control", "input": "Sorry, I meant Thursday not Friday.", "expected": "Sorry, I meant Thursday not Friday."}
+{"id": "spn_open3", "cat": "control", "input": "Oh, no wait, the other door.", "expected": "Oh, no wait, the other door."}
+{"id": "spn_open4", "cat": "control", "input": "I mean the small box.", "expected": "I mean the small box."}
+{"id": "spn_open5", "cat": "selfcorrection", "input": "No, I mean the blue folder. The red one, sorry, the green one.", "expected": "No, I mean the blue folder. The green one."}

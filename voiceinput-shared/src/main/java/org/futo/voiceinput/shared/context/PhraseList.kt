@@ -1,11 +1,11 @@
 package org.futo.voiceinput.shared.context
 
-/** One entry of an editable phrase list (filler words, self-corrections, quoted speech): a phrase, switched on or off. */
+/** One entry of an editable phrase list (filler words, self-corrections, quoted speech), holding a phrase switched on or off. */
 data class PhraseEntry(val phrase: String, val enabled: Boolean = true)
 
 /**
  * A built-in phrase list and your changes to it (the "Filler words", "Self-corrections" and
- * "Quoted speech" pages). Only your changes are saved: phrases you added, on or off, and built-in
+ * "Quoted speech" pages). Only your changes are saved, meaning phrases you added, on or off, and built-in
  * phrases you switched off. So the built-in list can grow, and the "Built-in phrases" switch can
  * leave them out (only your own phrases count) without touching what you saved.
  */
@@ -15,7 +15,7 @@ abstract class PhraseList {
 
     /**
      * The built-in lists of the versions that saved the whole list (before only changes were
-     * saved), oldest first. Frozen: [DEFAULTS] may grow, these never change.
+     * saved), oldest first. Frozen, so [DEFAULTS] may grow but these never change.
      */
     abstract val SAVED_DEFAULTS: List<List<String>>
 
@@ -27,16 +27,16 @@ abstract class PhraseList {
     /** Whether [phrase] is a built-in phrase. */
     fun isBuiltIn(phrase: String): Boolean = VoiceCommands.phraseWords(phrase) in builtInWords
 
-    /** The first line of a saved list of changes; older saves held the whole list without it. */
+    /** The first line of a saved list of changes, and older saves held the whole list without it. */
     private val HEADER = "\tchanges"
 
-    /** One phrase per line, a switched-off one ending in a tab and "0"; no changes: "". */
+    /** One phrase per line, a switched-off one ending in a tab and "0", and no changes gives "". */
     fun serialize(changes: List<PhraseEntry>): String =
         if (changes.isEmpty()) "" else HEADER + "\n" + changes.joinToString("\n") { it.phrase.trim() + if (it.enabled) "" else "\t0" }
 
     /**
-     * Your changes, from [serialize]'s format (blank: none). Invalid or repeated phrases are
-     * skipped. A list saved before only changes were saved held the whole list: its built-in
+     * Your changes, from [serialize]'s format (blank means none). Invalid or repeated phrases are
+     * skipped. A list saved before only changes were saved held the whole list, so its built-in
      * phrases that are on are dropped, and a built-in phrase left out was deleted, so it is off
      * (but not phrases the built-in list gained after that list was saved).
      */
@@ -52,7 +52,7 @@ abstract class PhraseList {
             out.add(PhraseEntry(p, enabled = parts.getOrNull(1) != "0"))
         }
         if (lines.first() == HEADER) return out
-        // an old save: the version it was saved with is the newest whose new phrases are in it
+        // an old save (the version it was saved with is the newest whose new phrases are in it)
         val versions = SAVED_DEFAULTS.map { v -> v.map { VoiceCommands.phraseWords(it) }.toSet() }
         val saved = versions.indices.lastOrNull { i -> i == 0 || (versions[i] - versions[i - 1]).any { it in seen } } ?: return out
         val deleted = SAVED_DEFAULTS[saved].filter { VoiceCommands.phraseWords(it) !in seen }.map { PhraseEntry(it, enabled = false) }
@@ -76,7 +76,7 @@ abstract class PhraseList {
     }
 
     /**
-     * The switched-on phrases: the built-in ones (unless [builtIn] is off) without those you
+     * The switched-on phrases are the built-in ones (unless [builtIn] is off) without those you
      * switched off, and your own.
      */
     fun enabledPhrases(changes: List<PhraseEntry>, builtIn: Boolean = true): List<String> {

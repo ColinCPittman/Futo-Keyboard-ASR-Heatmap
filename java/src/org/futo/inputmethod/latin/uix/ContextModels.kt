@@ -17,12 +17,14 @@ import org.futo.voiceinput.shared.context.ContextModel
 import org.futo.voiceinput.shared.context.ContextModelFiles
 import org.futo.voiceinput.shared.context.PersonalDictionary
 import org.futo.voiceinput.shared.context.SmartCorrectionOptions
+import org.futo.voiceinput.shared.context.SmartCorrectionSensitivity
 import org.futo.voiceinput.shared.context.VoiceCommands
 import org.futo.voiceinput.shared.context.CorrectionPhrases
 import org.futo.voiceinput.shared.context.FillerWords
 import org.futo.voiceinput.shared.context.QuoteTriggers
 import org.futo.voiceinput.shared.context.TypingConfusions
 import org.futo.voiceinput.shared.context.TypingCorrector
+import org.futo.voiceinput.shared.context.TypingCorrectionConfig
 import org.futo.voiceinput.shared.context.TypingPairEdits
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -34,12 +36,12 @@ import java.io.File
 import java.util.Locale
 
 /**
- * Third pass for voice input (after punctuation): a small LM judges the finished transcript and
+ * Third pass for voice input (after punctuation). A small LM judges the finished transcript and
  * fixes misheard sound-alike words, question marks and whatever else the "Smart corrections"
  * options enable (see ContextRescorer, SmartCorrectionOptions). Uses an imported `context` model
  * package (GGUF + sound-alike lexicon).
  *
- * Lifecycle (the model costs a few hundred MB while loaded): loading starts when voice input
+ * Lifecycle (the model costs a few hundred MB while loaded). Loading starts when voice input
  * opens ([preload]), the model stays loaded while the voice window is open, and it is released
  * as soon as the transcript has been processed or the window closes ([release]). Nothing is
  * kept around while voice input is not in use. The GGUF is memory-mapped.
@@ -67,14 +69,14 @@ object ContextModels {
         return installed.firstOrNull { it.id == id } ?: installed.firstOrNull()
     }
 
-    /** Context packages are per language ("en"); none declare "multi" today but it is accepted. */
+    /** Context packages are per language ("en"), and none declare "multi" today but it is accepted. */
     fun supportsLocale(pkg: InstalledModelPackage, locale: Locale): Boolean {
         val language = pkg.manifest.language
         return language.isNullOrEmpty() || language == "multi" || language == locale.language
     }
 
     /**
-     * Whether this device can run the native library: arm64 with the dot-product and fp16
+     * Whether this device can run the native library, which takes arm64 with the dot-product and fp16
      * arithmetic extensions it is compiled for (ARMv8.2+, practically every phone since 2018),
      * or x86_64 (emulator builds).
      */
@@ -132,6 +134,17 @@ object ContextModels {
         fillerPhrases = FillerWords.enabledPhrases(
             FillerWords.parse(context.getSetting(SMART_CORRECTIONS_FILLER_LIST)),
             builtIn = context.getSetting(SMART_CORRECTIONS_FILLER_BUILT_IN)),
+        sensitivity = SmartCorrectionSensitivity(
+            soundAlike = context.getSetting(SMART_CORRECTIONS_SENSITIVITY_SOUND_ALIKE),
+            names = context.getSetting(SMART_CORRECTIONS_SENSITIVITY_NAMES),
+            questions = context.getSetting(SMART_CORRECTIONS_SENSITIVITY_QUESTIONS),
+            numbers = context.getSetting(SMART_CORRECTIONS_SENSITIVITY_NUMBERS),
+            commands = context.getSetting(SMART_CORRECTIONS_SENSITIVITY_COMMANDS),
+            fillers = context.getSetting(SMART_CORRECTIONS_SENSITIVITY_FILLERS),
+            selfCorrections = context.getSetting(SMART_CORRECTIONS_SENSITIVITY_SELF_CORRECTIONS),
+            quotes = context.getSetting(SMART_CORRECTIONS_SENSITIVITY_QUOTES),
+            emoji = context.getSetting(SMART_CORRECTIONS_SENSITIVITY_EMOJI),
+        ),
     )
 
     /** Whether the context stage will run for [locale] (enabled, a model installed, an option on). */
@@ -140,7 +153,7 @@ object ContextModels {
 
     /**
      * The context stage for transcripts in [locale], or null if it is off or unavailable.
-     * [personal]: the user's personal-dictionary / learned words (names), read when a transcript
+     * [personal] is the user's personal-dictionary / learned words (names), read when a transcript
      * is corrected. The stage gets the ASR's original segments (pauses) as `segments`.
      */
     fun processorFor(
@@ -153,15 +166,17 @@ object ContextModels {
         val options = options(context)
         if (!options.any) return null
         return TranscriptPostProcessor { raw, segments ->
-            // usually ready: preload started reading the names when voice input opened
+            // usually ready, since preload started reading the names when voice input opened
             val withNames = if (options.emoji) withContext(Dispatchers.Default) { options(context, withEmojiNames = true) } else options
-            correct(context, pkg, raw, segments, withNames, personal, leftContext())
+            correct(context, pkg, raw, segments, withNames, personal, leftContext()).also { out ->
+                if (out != raw) withContext(Dispatchers.Main) { FeatureTips.offer(context, FeatureTip.VOICE_SMART_CORRECTIONS) }
+            }
         }
     }
 
     /**
-     * Whether Smart corrections for typing can run for [locale]: English, a usable context
-     * package installed (the voice switch doesn't matter; typing has its own).
+     * Whether Smart corrections for typing can run for [locale], which takes English, a usable context
+     * package installed (the voice switch doesn't matter, because typing has its own).
      */
     fun typingAvailable(context: Context, locale: Locale): Boolean = typingPackage(context, locale) != null
 
@@ -174,11 +189,27 @@ object ContextModels {
     }
 
     private var typingCorrector: Pair<ContextModel, TypingCorrector>? = null
-    private var typingPairKey: Pair<String, Boolean>? = null
+    private var typingPairsOf: TypingConfusions? = null
+    @Volatile private var mergedPairs: Pair<Pair<String, Boolean>, TypingConfusions>? = null
+
+    /** The typing settings, covering which kinds of fixes and how readily. */
+    fun typingConfig(context: Context) = TypingCorrectionConfig(
+        realWords = context.getSetting(TYPING_FIX_REAL_WORDS),
+        missedTypos = context.getSetting(TYPING_FIX_MISSED_TYPOS),
+    ).withSensitivity(context.getSetting(TYPING_SMART_CORRECTIONS_SENSITIVITY))
+
+    /** The typing pairs in use, which are the built-in ones with your changes (the same object until they change). */
+    fun typingPairs(context: Context): TypingConfusions {
+        val key = context.getSetting(TYPING_PAIRS_LIST) to context.getSetting(TYPING_PAIRS_BUILT_IN)
+        mergedPairs?.let { if (it.first == key) return it.second }
+        val merged = TypingPairEdits.merge(TypingConfusions.builtIn, TypingPairEdits.parse(key.first), key.second)
+        mergedPairs = key to merged
+        return merged
+    }
     private var typingRelease: Job? = null
 
     /**
-     * Smart corrections for typing: checks the sentence [from]..[to] of [text] (see
+     * Smart corrections for typing checks the sentence [from]..[to] of [text] (see
      * [TypingCorrector.check]). The model stays loaded while typing continues and is released a
      * minute after the last check ([releaseTypingSoon] sooner). Cancelling aborts the check.
      */
@@ -191,6 +222,7 @@ object ContextModels {
         finished: Boolean,
         skip: (Int) -> Boolean,
         caution: (String, String, String, String) -> Double,
+        unknown: (Int) -> Boolean = { false },
     ): TypingCorrector.Fix? {
         val pkg = typingPackage(context, locale) ?: return null
         typingRelease?.cancel()
@@ -198,15 +230,20 @@ object ContextModels {
             try {
                 val model = obtainLocked(pkg)
                 // your changes to the pairs are read for every check, so they apply at once
-                val pairKey = context.getSetting(TYPING_PAIRS_LIST) to context.getSetting(TYPING_PAIRS_BUILT_IN)
-                val corrector = typingCorrector?.takeIf { it.first === model && typingPairKey == pairKey }?.second
+                val pairs = typingPairs(context)
+                val config = typingConfig(context)
+                val corrector = typingCorrector?.takeIf {
+                    it.first === model && typingPairsOf === pairs && it.second.config == config
+                }?.second
                     ?: TypingCorrector(
                         model.lm,
-                        TypingPairEdits.merge(TypingConfusions.builtIn, TypingPairEdits.parse(pairKey.first), pairKey.second),
+                        pairs,
+                        config,
+                        model.lexicon,
                         caution = { a, b, c, d -> typingCaution(a, b, c, d) }
                     ).also {
                         typingCorrector = model to it
-                        typingPairKey = pairKey
+                        typingPairsOf = pairs
                     }
                 typingCaution = caution
                 model.lm.setAbort(false)
@@ -223,19 +260,19 @@ object ContextModels {
                     try {
                         val ctx = coroutineContext
                         val start = System.nanoTime()
-                        // a failed evaluation (seen once, right after a check) loses the sentence:
+                        // a failed evaluation (seen once, right after a check) loses the sentence, so
                         // clear the abort flag and try once more
                         val r = try {
-                            corrector.check(text, from, to, finished, skip) { ctx.ensureActive() }
+                            corrector.check(text, from, to, finished, skip, { ctx.ensureActive() }, unknown)
                         } catch (e: kotlinx.coroutines.CancellationException) {
                             throw e
                         } catch (e: Throwable) {
                             Log.w(TAG, "Typing check failed (${e.message}), trying again")
                             ctx.ensureActive()
                             model.lm.setAbort(false)
-                            corrector.check(text, from, to, finished, skip) { ctx.ensureActive() }
+                            corrector.check(text, from, to, finished, skip, { ctx.ensureActive() }, unknown)
                         }
-                        // counts and timings only: never the text
+                        // counts and timings only, never the text
                         Log.i(TAG, "Typing check over ${to - from} chars in ${(System.nanoTime() - start) / 1_000_000} ms" +
                             if (r.fix != null) " (fix)" else "")
                         r.fix
@@ -282,7 +319,7 @@ object ContextModels {
 
     /**
      * Frees the model (voice input closed, or a package was deleted). A correction that is still
-     * running is aborted first; it then returns its input unchanged.
+     * running is aborted first, and it then returns its input unchanged.
      */
     fun release() {
         busy?.lm?.setAbort(true)
@@ -342,7 +379,7 @@ object ContextModels {
                 }
             }
         } finally {
-            // the transcript is done: don't keep the model around
+            // the transcript is done, so don't keep the model around
             releaseLocked()
         }
     }

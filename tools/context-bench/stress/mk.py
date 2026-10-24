@@ -1,6 +1,6 @@
 """Converts a compact stress batch (batch_NN.txt) to the harness format (batch_NN.jsonl).
 
-One item per line; blank lines and lines starting with # are skipped:
+One item per line, and blank lines and lines starting with # are skipped:
 
   c <input>                                   control: must come back unchanged
   p:<cat> <input> => <expected> [;; <alt>]...   positive

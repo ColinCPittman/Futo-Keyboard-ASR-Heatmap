@@ -103,7 +103,7 @@ class RecentWordBufferTest {
         val buffer = RecentWordBuffer<Unit>(10)
         val dent = entry("dent")
         buffer.add(dent)
-        buffer.backspace(1) // just the space: the keyboard resumes "dent"
+        buffer.backspace(1) // just the space, so the keyboard resumes "dent"
         buffer.onWordResumed("dent")
         assertEquals(1, buffer.deletedCount)
         assertEquals(dent, buffer.relabel("dent", "sent"))
@@ -136,7 +136,7 @@ class RecentWordBufferTest {
     @Test
     fun correctedWordTeachesTheIntendedKey() {
         // "sent" typed with the first tap landing on the right edge of 'd' (shown as "dent"),
-        // later corrected to "sent": the tap must be learned as a (far right) 's' tap.
+        // later corrected to "sent", so the tap must be learned as a (far right) 's' tap.
         val d = key('d')
         val t = listOf(RecordedTap('d'.code, d.x + 2, d.centerY.toInt(), true)) + taps("ent")
         val buffer = RecentWordBuffer<Unit>(10)

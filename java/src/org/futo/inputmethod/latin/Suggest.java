@@ -170,7 +170,7 @@ public final class Suggest {
                 autoCorrectionThreshold, numberRowActive, false /* alwaysUseMiddleSuggestion */);
     }
 
-    /** The typed word has a symbol in it ("blahblahflarg!", "Tr0ub4dor&x"): keep it as typed. */
+    /** The typed word has a symbol in it ("blahblahflarg!", "Tr0ub4dor&x"), so keep it as typed. */
     private static boolean hasAttachedSymbol(final String typedWord) {
         for (int i = 0; i < typedWord.length(); ) {
             final int cp = typedWord.codePointAt(i);
@@ -185,7 +185,7 @@ public final class Suggest {
     }
 
     /**
-     * @param alwaysUseMiddleSuggestion if true, the confidence threshold is bypassed: the top
+     * @param alwaysUseMiddleSuggestion if true, the confidence threshold is bypassed and the top
      * ranked candidate always becomes the auto-correction (and so what is shown in the middle slot
      * of the suggestion strip and committed on separator), unless one of the safety disqualifiers
      * applies, in which case the typed word is kept (and shown in the middle slot).
@@ -231,7 +231,7 @@ public final class Suggest {
         final boolean resultsArePredictions = !wordComposer.isComposingWord();
 
         // In "always use middle suggestion" mode, the allowsToBeAutoCorrected check below is not
-        // required: whether the typed word is already a valid word is instead taken into account
+        // required, because whether the typed word is already a valid word is instead taken into account
         // when picking the candidate, see #selectBestCandidateForMiddleSlot. Resumed words never
         // use this mode (they never auto-correct, the user picks a replacement manually).
         final boolean useMiddleSuggestionMode = alwaysUseMiddleSuggestion
@@ -296,7 +296,7 @@ public final class Suggest {
                 || hasAttachedSymbol(typedWordString)) {
             hasAutoCorrection = false;
         } else if (useMiddleSuggestionMode) {
-            // Bypass the confidence threshold entirely: the best ranked candidate wins.
+            // Bypass the confidence threshold entirely, so the best ranked candidate wins.
             hasAutoCorrection = selectBestCandidateForMiddleSlot(
                     suggestionsContainer, typedWordString, foundInDictionary);
         } else {
@@ -367,7 +367,7 @@ public final class Suggest {
      * it (a completion), so that valid words are not surprisingly altered.
      *
      * The best candidate is only used when it is a typo-sized change of the typed word (see
-     * #isCloseSpelling): with no believable correction ("blahblahflarg") the typed word stays in
+     * #isCloseSpelling), and with no believable correction ("blahblahflarg") the typed word stays in
      * the middle.
      *
      * @return whether the first element of candidates should be auto-corrected to.
@@ -383,9 +383,9 @@ public final class Suggest {
         // same as in the regular auto-correction logic.
         if (typedWord.codePointCount(0, typedWord.length()) < 2
                 && !best.isKindOf(SuggestedWordInfo.KIND_WHITELIST)) return false;
-        // Only a typo-sized change may replace what was typed: a far-off guess ("Blahflarg" ->
+        // Only a typo-sized change may replace what was typed, so a far-off guess ("Blahflarg" ->
         // "Black-flat") leaves the typed word in the middle, known word or not. This applies to
-        // KIND_WHITELIST too: the transformer LM marks its own suggestions that way, and real
+        // KIND_WHITELIST too, because the transformer LM marks its own suggestions that way, and real
         // allowlist entries ("im" -> "I'm") are typo-sized anyway.
         if (!isCloseSpelling(typedWord, best.mWord)) return false;
 
@@ -407,9 +407,9 @@ public final class Suggest {
     }
 
     /**
-     * Whether [candidate] is a typo-sized change of [typed] (ignoring case): at most 2 edits for
+     * Whether [candidate] is a typo-sized change of [typed] (ignoring case), meaning at most 2 edits for
      * words up to 6 letters and 3 for longer ones, counting a swap of two neighbouring letters as
-     * one edit. "teh" -> "the" and "beautfil" -> "beautiful" qualify; "blahflarg" -> "Black-flat"
+     * one edit. "teh" -> "the" and "beautfil" -> "beautiful" qualify, but "blahflarg" -> "Black-flat"
      * does not, so a word the keyboard doesn't know stays in the middle as typed.
      */
     /* package for test */ static boolean isCloseSpelling(final String typed, final String candidate) {

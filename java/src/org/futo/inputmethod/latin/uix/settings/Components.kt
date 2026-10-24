@@ -859,10 +859,12 @@ fun<T> DropDownPicker(
     onSet: (T) -> Unit,
     getDisplayName: (T) -> String,
     scrollableOptions: Boolean = false,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     val resources = LocalResources.current
     var expanded by remember { mutableStateOf(false) }
+    if (!enabled) expanded = false
 
     SpacedColumn(4.dp, modifier = modifier.semantics {
         role = Role.DropdownList
@@ -874,7 +876,7 @@ fun<T> DropDownPicker(
                 if(expanded) { 2.dp } else { 1.dp },
                 MaterialTheme.colorScheme.outline,
                 DropDownShape
-            ).heightIn(min = 44.dp).clip(DropDownShape).clickable {
+            ).heightIn(min = 44.dp).clip(DropDownShape).clickable(enabled = enabled) {
                 expanded = !expanded
             }.padding(16.dp).semantics {
                 stateDescription = resources.getString(

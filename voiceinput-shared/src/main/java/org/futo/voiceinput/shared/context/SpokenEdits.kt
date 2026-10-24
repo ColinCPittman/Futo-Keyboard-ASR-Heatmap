@@ -1,8 +1,8 @@
 package org.futo.voiceinput.shared.context
 
 /**
- * Rule-based candidate generation for the options that delete or restructure text: fillers,
- * self-corrections, spoken commands and numbers. Rules only PROPOSE edits; the context
+ * Rule-based candidate generation for the options that delete or restructure text (fillers,
+ * self-corrections, spoken commands and numbers). Rules only PROPOSE edits, and the context
  * stage's LM judges each group of alternatives against the unchanged text, and
  * [TranscriptGuard.checkEdit] re-checks every accepted edit with the same rules.
  */
@@ -10,7 +10,7 @@ object SpokenEdits {
     enum class Kind { FILLER, REPEAT, SELF_CORRECTION, COMMAND, SCRATCH, DELETE_WORD, QUOTE, EMOJI, NUMBER }
 
     /**
-     * Replace text[start, end) with [replacement]. [parallel]: a self-correction whose repair
+     * Replace text[start, end) with [replacement]. [parallel] marks a self-correction whose repair
      * mirrors what it replaces (it needs less of the LM's approval).
      */
     data class SpanEdit(
@@ -19,9 +19,9 @@ object SpokenEdits {
     )
 
     /**
-     * Alternatives for one spot; at most one is applied (the LM's best, if it beats the original).
-     * [certain]: a single alternative the rules are sure of (a command phrase said between two
-     * pauses), applied without asking the LM; the guard still checks it.
+     * Alternatives for one spot, and at most one is applied (the LM's best, if it beats the original).
+     * [certain] is a single alternative the rules are sure of (a command phrase said between two
+     * pauses), applied without asking the LM, but the guard still checks it.
      */
     class Group(val kind: Kind, val alternatives: List<SpanEdit>, val label: String, val certain: Boolean = false) {
         val start get() = alternatives.minOf { it.start }
@@ -48,20 +48,20 @@ object SpokenEdits {
 
         val size get() = words.size
 
-        /** Punctuation (non-space) of the gap before word k (k == size: the end of the text). */
+        /** Punctuation (non-space) of the gap before word k (the end of the text when k == size). */
         fun punctBefore(k: Int) = TranscriptGuard.punct(gaps[k])
 
         /** Word k starts a sentence (text start, or after . ? ! or a line break). */
         fun sentenceStart(k: Int) = k == 0 || punctBefore(k).any { it in ".?!" } || '\n' in gaps[k]
 
-        /** The gap before word k ends a sentence/line (k == size: text end). */
+        /** The gap before word k ends a sentence/line (text end when k == size). */
         fun sentenceEndBefore(k: Int) = k == size || sentenceStart(k)
     }
 
     // ------------------------------------------------------------------------------------
     // Fillers and repeats
 
-    /** Words that count as fillers for other rules (repeats, self-corrections): the hesitation sounds. */
+    /** Words that count as fillers for other rules (repeats, self-corrections), meaning the hesitation sounds. */
     val FILLERS: Set<String> = FillerWords.SOUNDS.toSet() + setOf("ummm", "uhhh", "hmmm")
 
     /** The built-in filler list ([FillerWords.DEFAULTS]) as the rules use it. */
@@ -81,7 +81,10 @@ object SpokenEdits {
     private val INTERJECTION_FIRST = setOf("uh", "um", "uhm", "uhh", "umm")
     private val INTERJECTION_SECOND = setOf("huh", "oh", "hmm", "hm")
 
-    /** Word k is inside quotation marks (quoted speech keeps its fillers: she said "um, what?"). */
+    /** Asides said between pauses that start with a word the sentence may just have used ("Do you, you know, ..."). */
+    private val ASIDES = listOf(listOf("you", "know"), listOf("you", "see"))
+
+    /** Word k is inside quotation marks (quoted speech keeps its fillers, as in she said "um, what?"). */
     private fun insideQuotes(words: Words, k: Int): Boolean {
         val before = words.text.substring(0, words.starts[k])
         return before.count { it == '"' } % 2 == 1 || before.count { it == '“' } > before.count { it == '”' }
@@ -98,17 +101,17 @@ object SpokenEdits {
             if (k + n > words.size || words.norm.subList(k, k + n) != f.words) continue
             // a filler phrase is said in one go ("one of a kind, of course" is not "kind of")
             if ((1 until n).any { words.punctBefore(k + it).isNotEmpty() || words.sentenceStart(k + it) }) continue
-            // "ER" (the emergency room) / "UM" ...: all caps is a word, not a filler
+            // "ER" (the emergency room) / "UM" ... are words when in all caps, not fillers
             if ((k until k + n).any { val w = words.words[it]; w.length > 1 && w.all { c -> c.isUpperCase() } }) continue
             if (f.atEnd) {
                 // "so yeah" closes a sentence after a pause ("we went home, so yeah."), or is one on
-                // its own; not a question ("so yeah?")
+                // its own, and not a question ("so yeah?")
                 if (!words.sentenceEndBefore(k + n) || '?' in words.punctBefore(k + n)) continue
                 if (!words.sentenceStart(k) && words.punctBefore(k).none { it in PAUSE_MARKS }) continue
             } else {
                 // interjections ("Ah, I see.") and the user's own fillers only inside a sentence
                 if (!f.anywhere && (words.sentenceStart(k) || words.sentenceEndBefore(k + n))) continue
-                // words that are fillers only between pauses ("it was, like, huge"; "I like it")
+                // words that are fillers only between pauses ("it was, like, huge" but not "I like it")
                 if (f.betweenPauses && (words.punctBefore(k).none { it in PAUSE_MARKS } || words.punctBefore(k + n).none { it in PAUSE_MARKS })) continue
                 // before a number it means "about" ("it was, like, twenty bucks")
                 if (f.betweenPauses && isNumberish(words.words[k + n])) continue
@@ -122,7 +125,7 @@ object SpokenEdits {
         return 0
     }
 
-    /** Deleting words [i, j): alternatives for the punctuation left behind. */
+    /** Deleting words [i, j) gives alternatives for the punctuation left behind. */
     private fun deletion(
         words: Words, i: Int, j: Int, kind: Kind, label: String, isWord: ((String) -> Boolean)? = null,
     ): List<SpanEdit> {
@@ -136,7 +139,7 @@ object SpokenEdits {
                 out.add(SpanEdit(words.ends[i - 1], words.starts[j], " ", kind, label))
             }
             // the voice model ended a sentence at the pause after the filler ("The meeting is, um...
-            // At 2.", "I was. Um. Thinking we could go"): or join across it, the next word lowercase
+            // At 2.", "I was. Um. Thinking we could go"), or join across it with the next word lowercase
             if (i > 0 && words.sentenceStart(j) && '\n' !in words.gaps[j] && '\n' !in words.gaps[i]) {
                 val w = words.words[j]
                 val next = if (w[0].isUpperCase() && !TranscriptGuard.isPronounI(w) && isWord?.invoke(w) == true) {
@@ -146,16 +149,16 @@ object SpokenEdits {
                 else if (!w[0].isLowerCase()) out.add(SpanEdit(words.ends[i - 1], words.starts[j], " ", kind, label))
             }
         } else if (i > 0) {
-            // at the end: keep the final punctuation ("I think so, um." -> "I think so.")
+            // at the end, keep the final punctuation ("I think so, um." -> "I think so.")
             out.add(SpanEdit(words.ends[i - 1], words.ends[j - 1], "", kind, label))
         }
         return out.filter { e -> e.start < e.end && t.substring(e.start, e.end) != e.replacement }
     }
 
     /**
-     * [isWord]: whether a word is a common lowercase word (the lexicon's case data); a repeated
+     * [isWord] tells whether a word is a common lowercase word (the lexicon's case data). A repeated
      * word that is not ("mahi mahi", "Bora Bora", "choo choo") is a name or a reduplication,
-     * not a stutter. Null: no such data (every word counts).
+     * not a stutter. Null means no such data (every word counts).
      */
     fun fillerGroups(
         words: Words, fillers: List<FillerWords.Filler> = DEFAULT_FILLERS, isWord: ((String) -> Boolean)? = null,
@@ -174,7 +177,7 @@ object SpokenEdits {
                 }
                 if (!(k == 0 && e == words.size)) {
                     val alts = deletion(words, k, e, Kind.FILLER, words.words.subList(k, e).joinToString(" "), isWord)
-                    // hesitation sounds ("um", "hmm") are never meant: removed without the LM's
+                    // hesitation sounds ("um", "hmm") are never meant, so they are removed without the LM's
                     // vote (it only picks the punctuation left behind)
                     val certain = (k until e).all { i -> fillers.any { f -> f.anywhere && f.words == listOf(words.norm[i]) } }
                     if (alts.isNotEmpty()) out.add(Group(Kind.FILLER, alts, "filler", certain))
@@ -195,11 +198,17 @@ object SpokenEdits {
                 // the repeat must be within one sentence, separated by spaces/commas/dashes only
                 val inner = (i + 1..i + 2 * n - 1)
                 if (inner.any { words.sentenceStart(it) || !words.punctBefore(it).all { c -> c in ",-—–…" } }) continue
-                // no pause inside a copy: "I know, I know, I" is not "know, I" twice
+                // no pause inside a copy ("I know, I know, I" is not "know, I" twice)
                 if ((1 until n).any { words.punctBefore(i + it).isNotEmpty() || words.punctBefore(i + n + it).isNotEmpty() }) continue
-                // said twice on purpose: a pause between the copies and after the second one
+                // said twice on purpose when there is a pause between the copies and after the second one
                 // ("I know, I know.", "Got it, got it, thanks", "Sorry, sorry, I didn't see you")
                 if (words.punctBefore(i + n).isNotEmpty() && (i + 2 * n == words.size || words.punctBefore(i + 2 * n).isNotEmpty())) continue
+                // the second copy opens an aside between pauses ("Do you, you know, want to come?")
+                if (n == 1 && words.punctBefore(i + 1).isNotEmpty() && ASIDES.any { p ->
+                        i + 1 + p.size < words.size && words.norm.subList(i + 1, i + 1 + p.size) == p &&
+                            (2 until 1 + p.size).none { words.punctBefore(i + it).isNotEmpty() } &&
+                            words.punctBefore(i + 1 + p.size).any { it in PAUSE_MARKS }
+                    }) continue
                 // a name or a reduplicated word ("Bora Bora", "mahi mahi"), not a stutter
                 if (n == 1 && !TranscriptGuard.isPronounI(words.words[i]) &&
                     (isMidName(words, i) || isMidName(words, i + 1) || (isWord != null && !isWord(words.words[i])))
@@ -218,7 +227,7 @@ object SpokenEdits {
     /** The built-in self-correction phrases ([CorrectionPhrases.DEFAULTS]) as markers. */
     val DEFAULT_MARKERS: List<CorrectionMarker> = CorrectionPhrases.markers(CorrectionPhrases.DEFAULTS)
 
-    /** A marker followed by one of these starts a new clause ("I mean it", "actually, I think ..."): no repair. */
+    /** A marker followed by one of these starts a new clause ("I mean it", "actually, I think ..."), so no repair. */
     val CLAUSE_STARTERS = setOf(
         "i", "you", "he", "she", "it", "we", "they", "i'm", "you're", "he's", "she's", "it's", "we're", "they're",
         "i'll", "you'll", "we'll", "they'll", "i've", "you've", "we've", "they've", "i'd", "you'd", "we'd",
@@ -233,26 +242,32 @@ object SpokenEdits {
     private const val DELIMS = ",;-—–…:("
 
     /** Prepositions and determiners that start a phrase ("on Monday", "the red one"). */
+    /** Words that can come before a self-correction cue at the start of a dictation ("No, I mean", "Oh, sorry"). */
+    private val OPENING_LEAD = setOf(
+        "no", "nope", "oh", "ah", "um", "uh", "er", "well", "so", "and", "but", "or", "okay", "ok", "yeah", "yes",
+        "sorry", "wait", "actually", "oops", "hmm", "hey", "nah", "ugh", "whoops", "shoot",
+    )
+
     private val PHRASE_STARTS = setOf(
         "on", "at", "in", "to", "for", "with", "from", "by", "of", "about", "into", "onto", "after", "before",
         "until", "the", "a", "an", "my", "your", "his", "her", "our", "their", "this", "that", "these", "those", "some",
     )
 
-    /** Word k is a capitalized word inside a sentence (a name: "Sam", "Alex"). */
+    /** Word k is a capitalized word inside a sentence (a name, like "Sam" or "Alex"). */
     private fun isMidName(words: Words, k: Int): Boolean {
         val w = words.words[k]
         return !words.sentenceStart(k) && w[0].isUpperCase() && !TranscriptGuard.isPronounI(w) &&
             w.drop(1).all { !it.isLetter() || it.isLowerCase() }
     }
 
-    /** Word k (the first marker word) follows a pause: punctuation before it, or a segment start. */
+    /** Word k (the first marker word) follows a pause (punctuation before it, or a segment start). */
     private fun delimited(words: Words, k: Int, segmentStarts: Set<Int>) =
         k in segmentStarts || words.punctBefore(k).any { it in DELIMS }
 
     /** A number, spoken or in digits ("five", "5"). */
     private fun isNumberish(w: String) = NumberWords.isSpokenNumber(w) || (w.isNotEmpty() && w.all { it.isDigit() })
 
-    /** [isWord]: a common lowercase word (a repair the voice model capitalized after a pause is lowercased). */
+    /** [isWord] tells whether a word is a common lowercase word (a repair the voice model capitalized after a pause is lowercased). */
     fun selfCorrectionGroups(
         words: Words, segmentStarts: Set<Int>, markers: List<CorrectionMarker> = DEFAULT_MARKERS,
         isWord: ((String) -> Boolean)? = null,
@@ -272,9 +287,15 @@ object SpokenEdits {
             val mw = marker.words
             val needsDelim = marker.needsPause
             val next = m + mw.size
+            // a cue that opens the dictation ("No, I mean the other one.", "Oh, wait, ...") corrects an
+            // earlier message, not anything here (only lead-in words before it), so it stays as said
+            if ((0 until m).all { words.norm[it] in OPENING_LEAD || words.norm[it] in FILLERS }) {
+                m = next
+                continue
+            }
             val atSentenceStart = words.sentenceStart(m)
-            // the voice model ends a sentence at every pause: "on Friday, no wait. Saturday.", "We
-            // need three. Actually, four chairs." A repair that starts a sentence follows a phrase made
+            // the voice model ends a sentence at every pause ("on Friday, no wait. Saturday.", "We
+            // need three. Actually, four chairs."). A repair that starts a sentence follows a phrase made
             // for corrections, or mirrors a number ("three" -> "four")
             val repairStartsSentence = next < words.size && words.sentenceStart(next) && '\n' !in words.gaps[next]
             val numbers = m > 0 && next < words.size && isNumberish(words.words[m - 1]) && isNumberish(words.words[next])
@@ -288,12 +309,12 @@ object SpokenEdits {
                 (!needsDelim || atSentenceStart || delimited(words, m, segmentStarts)) && words.norm[next] !in CLAUSE_STARTERS && !words.norm[next].endsWith("n't") &&
                 words.norm[next] !in FILLERS
             if (ok) {
-                // the repair: the words after the marker up to the next punctuation (at most 4)
+                // the repair is the words after the marker up to the next punctuation (at most 4)
                 var rEnd = next + 1
                 while (rEnd < words.size && rEnd - next < 4 && words.punctBefore(rEnd).isEmpty() && '\n' !in words.gaps[rEnd]) rEnd++
                 val repairLen = rEnd - next
                 // across a sentence end ("... toaster oven? I mean, air fryer?") only a short
-                // repair that ends its sentence: "... the movie. I mean, the ending was weird" is a new thought
+                // repair that ends its sentence ("... the movie. I mean, the ending was weird" is a new thought)
                 if (atSentenceStart || repairStartsSentence) {
                     var sEnd = next + 1
                     while (sEnd < words.size && !words.sentenceStart(sEnd)) sEnd++
@@ -302,7 +323,7 @@ object SpokenEdits {
                         continue
                     }
                 }
-                // the reparandum: 1..4 words before the marker, within its clause
+                // the reparandum is 1..4 words before the marker, within its clause
                 val lengths = ArrayList<Int>()
                 for (n in 1..4) {
                     val r = m - n
@@ -312,13 +333,13 @@ object SpokenEdits {
                     if (words.sentenceStart(r)) break
                 }
                 // a repair that restarts with the reparandum's first word ("the red one, sorry, the
-                // blue one", "at the mall, scratch that, at the library") fixes the length; otherwise
+                // blue one", "at the mall, scratch that, at the library") fixes the length, and otherwise
                 // the reparandum is at most as long as the repair and the LM picks
                 val restart = lengths.firstOrNull { words.norm[m - it] == words.norm[next] }
                 // a reparandum that would take the sentence's first word too ("Text Sam, sorry, Alex")
                 // only if nothing shorter is possible
                 val notStart = lengths.filter { !words.sentenceStart(m - it) }.ifEmpty { lengths.take(1) }
-                // the repair replaces a phrase of the same kind: a reparandum that starts with
+                // the repair replaces a phrase of the same kind, so a reparandum that starts with
                 // "on", "the", ... needs a repair that does too ("on Monday, I mean, Tuesday"
                 // replaces "Monday", not "on Monday")
                 val parallelStart = notStart.filter { n ->
@@ -333,7 +354,7 @@ object SpokenEdits {
                 // sorry, one cup" is not "two cups of one cup")
                 val repairIsNumber = isNumberish(words.words[next])
                 val alts = chosen.mapNotNull { n ->
-                    // the repair mirrors the reparandum: it restarts with the same word ("at five.
+                    // the repair mirrors the reparandum, so it restarts with the same word ("at five.
                     // I mean, at six"), or both are numbers or names ("Sam, sorry, Alex")
                     val a = words.words[m - n]
                     val b = words.words[next]
@@ -367,7 +388,7 @@ object SpokenEdits {
     // ------------------------------------------------------------------------------------
     // Spoken commands
 
-    /** An inserting command (punctuation, symbol or line break): its words and what it does. */
+    /** An inserting command (punctuation, symbol or line break) with its words and what it does. */
     class Command(
         val words: List<String>,
         val action: VoiceCommandAction,
@@ -376,11 +397,11 @@ object SpokenEdits {
     ) {
         val spacing get() = action.spacing
 
-        /** A closing quote with a mark said right after it ("close quote, question mark"): `?"`. */
+        /** A closing quote with a mark said right after it ("close quote, question mark") giving `?"`. */
         val isQuoteCombo get() = symbol != action.symbol
 
         /**
-         * Unmistakable commands that need no pause around them: quotes and brackets ("open quote"),
+         * Unmistakable commands that need no pause around them, like quotes and brackets ("open quote"),
          * and words people rarely say otherwise ("ampersand", "asterisk").
          */
         val isDistinctive get() = (words.size > 1 && action in DISTINCTIVE_ACTIONS) ||
@@ -409,7 +430,7 @@ object SpokenEdits {
         }
         .map { Command(it.words, it.action) }
         .let { base ->
-            // "close quote question mark" -> `?"`: the mark goes inside the quote
+            // "close quote question mark" -> `?"` (the mark goes inside the quote)
             val combos = base.filter { it.symbol in CLOSERS }.flatMap { q ->
                 base.filter { it.action in MARKS_INSIDE_QUOTES }.map { m ->
                     Command(q.words + m.words, q.action, m.symbol + q.symbol, m.action.endsSentence)
@@ -425,7 +446,7 @@ object SpokenEdits {
         .map { it.words }
         .sortedByDescending { it.size }
 
-    /** Closing quotes: the sentence end said before them stays inside ("doing?""). */
+    /** Closing quotes keep the sentence end said before them inside ("doing?""). */
     val CLOSERS = setOf("\"")
 
     /** The "delete the last word" phrases of [commands], longest first. */
@@ -437,7 +458,7 @@ object SpokenEdits {
     /** Symbols that attach to the next word as a handle, tag or amount ("@sam", "#travel", "$5"). */
     private val TAGGING_ACTIONS = setOf(VoiceCommandAction.AT_SIGN, VoiceCommandAction.HASHTAG, VoiceCommandAction.DOLLAR_SIGN)
 
-    /** Words that are never a handle, tag or amount: after them the symbol is being talked about. */
+    /** Words that are never a handle, tag or amount, because after them the symbol is being talked about. */
     private val NOT_A_TAG = setOf(
         "or", "and", "is", "are", "was", "means", "mean", "of", "the", "a", "an", "to", "for", "in", "on", "at", "with",
         "vs", "versus", "key", "button", "symbol", "sign", "looks", "goes", "isn't", "but",
@@ -452,7 +473,7 @@ object SpokenEdits {
         "needs", "without", "with", "and", "or", "than", "what", "which",
     )
 
-    /** Before "period" only, these make it a noun ("a trial period", "second period"); "time comma" is a command. */
+    /** Before "period" only, these make it a noun ("a trial period", "second period"), but "time comma" is a command. */
     val PERIOD_NOUN_CONTEXT = setOf(
         "trial", "time", "waiting", "grace", "free", "probation", "probationary", "cooling", "rest", "school", "class",
         "second", "third", "fourth", "honeymoon", "transition", "billing", "reporting", "adjustment", "menstrual",
@@ -461,7 +482,7 @@ object SpokenEdits {
 
     /**
      * Before a command of two or more words ("exclamation point", "new line") only these make it a
-     * noun ("an exclamation point", "the new line"); the rest of [NOUN_CONTEXT] is about one-word
+     * noun ("an exclamation point", "the new line"), and the rest of [NOUN_CONTEXT] is about one-word
      * marks ("a free period", "the oxford comma").
      */
     val PHRASE_NOUN_CONTEXT = setOf(
@@ -475,7 +496,7 @@ object SpokenEdits {
     /** After a command word these make it a noun phrase ("period of time", "new line of products"). */
     val NOUN_FOLLOW = setOf("of", "separated", "splice", "splices", "key", "button", "sign", "symbol", "pieces", "piece", "drama", "for", "in")
 
-    /** Word k (start) or word end (exclusive) is a pause boundary: segment start, sentence boundary or text edge. */
+    /** Word k (start) or word end (exclusive) is a pause boundary (segment start, sentence boundary or text edge). */
     private fun boundaryAt(words: Words, k: Int, segmentStarts: Set<Int>) =
         k == 0 || k == words.size || k in segmentStarts || words.sentenceStart(k)
 
@@ -486,7 +507,7 @@ object SpokenEdits {
     /** Marks after which a sentence goes on (the next word is lowercase even after the ASR's period). */
     private val CONTINUING_MARKS = setOf(VoiceCommandAction.COMMA, VoiceCommandAction.SEMICOLON, VoiceCommandAction.COLON)
 
-    /** The words from [e] to the next sentence end do not end with . ? ! (a fragment: "for some reason,"). */
+    /** The words from [e] to the next sentence end do not end with . ? ! (a fragment, like "for some reason,"). */
     private fun clauseContinues(words: Words, e: Int): Boolean {
         var c = e + 1
         while (c < words.size && !words.sentenceStart(c)) c++
@@ -497,7 +518,7 @@ object SpokenEdits {
 
     /**
      * Number of words of [words] from [k] that say [phrase], or 0. A word may hold several words
-     * of the phrase joined by hyphens ("open-quote", "close-quote", "new-line"); it must hold
+     * of the phrase joined by hyphens ("open-quote", "close-quote", "new-line"), but it must hold
      * whole phrase words only.
      */
     fun phraseAt(words: Words, k: Int, phrase: List<String>): Int = phraseLength(words.norm, k, phrase)
@@ -545,7 +566,7 @@ object SpokenEdits {
                 cmdLen = n
                 n > 0 && (1 until n).none {
                     // the ASR writes a comma where you pause inside a command ("open, quote",
-                    // "close quote, question mark"): only a sentence end splits a command
+                    // "close quote, question mark"), so only a sentence end splits a command
                     val p = words.punctBefore(k + it)
                     words.sentenceStart(k + it) || (p.isNotEmpty() && p.any { ch -> ch !in ",;-—–" })
                 }
@@ -560,26 +581,26 @@ object SpokenEdits {
             val prev = if (k > 0) words.norm[k - 1] else null
             val nextW = if (e < words.size) words.norm[e] else null
             val spacing = cmd.spacing
-            // evidence: a pause on one side, no noun context ("a free period", "my colon"). Noun
-            // context only counts within the same sentence: after the previous sentence's own
+            // evidence is a pause on one side and no noun context ("a free period", "my colon"). Noun
+            // context only counts within the same sentence, so after the previous sentence's own
             // punctuation ("... for free. Exclamation point.") it doesn't
             val nounWords = if (cmd.words.size > 1) PHRASE_NOUN_CONTEXT else NOUN_CONTEXT
             val nounBefore = prev != null && !words.sentenceStart(k) &&
                 (prev in nounWords || (cmd.action == VoiceCommandAction.PERIOD && cmd.words.size == 1 && prev in PERIOD_NOUN_CONTEXT))
-            // "close quote for some reason": words like "for" only make a one-word mark a noun ("period for")
+            // in "close quote for some reason" words like "for" only make a one-word mark a noun ("period for")
             val nounAfter = nextW != null && nextW in NOUN_FOLLOW && !cmd.isDistinctive
             var ok = (before || after || cmd.isDistinctive) && !nounBefore && !nounAfter
             ok = ok && when (spacing) {
-                // a mark after a word: a one-word mark ("period", "comma") needs a pause after it;
+                // a mark after a word. A one-word mark ("period", "comma") needs a pause after it,
                 // longer ones ("exclamation point") also work with a pause before
                 CommandSpacing.AFTER_WORD ->
                     k > 0 && (after || cmd.isDistinctive || (cmd.words.size > 1 && before && nextStartsSentence(words, e, segmentStarts)))
                 // a mark before a word ("open parenthesis", "dollar sign") needs that word
-                // ("At sign or at symbol?": a handle, a tag or an amount is not "or", "means", ...)
+                // ("At sign or at symbol?" doesn't count, since a handle, a tag or an amount is not "or", "means", ...)
                 CommandSpacing.BEFORE_WORD -> e < words.size &&
                     (cmd.action !in TAGGING_ACTIONS || words.norm[e] !in NOT_A_TAG)
-                // joining ("hyphen", "slash") needs a word on both sides; a spaced symbol a word
-                // before it ("rock & roll"; "Asterisk means footnote." talks about it)
+                // joining ("hyphen", "slash") needs a word on both sides, and a spaced symbol a word
+                // before it ("rock & roll", while "Asterisk means footnote." talks about it)
                 CommandSpacing.JOIN -> k > 0 && e < words.size
                 CommandSpacing.SPACED -> k > 0
                 CommandSpacing.LINE -> !(k == 0 && e == words.size)
@@ -591,7 +612,7 @@ object SpokenEdits {
                 k = e
                 continue
             }
-            // replacement: [end of the previous word (or the command), end of the next word (or the text end))
+            // replacement range is [end of the previous word (or the command), end of the next word (or the text end))
             val a = if (k > 0) words.ends[k - 1] else words.starts[k]
             val b = if (e < words.size) words.starts[e] else t.length
             val prevPunct = if (k > 0) TranscriptGuard.punct(words.gaps[k]).filter { it in ".?!,;:" } else ""
@@ -605,21 +626,21 @@ object SpokenEdits {
             val rep = StringBuilder()
             when (spacing) {
                 CommandSpacing.LINE -> {
-                    // keep the previous sentence's own punctuation, then the line break; the next line starts capitalized
+                    // keep the previous sentence's own punctuation, then the line break, and the next line starts capitalized
                     rep.append(prevPunct.filter { it in ".?!:," })
                     rep.append(cmd.symbol)
                     if (nextWord != null && nextWord[0].isLowerCase()) nextWord = capitalizeFirst(nextWord)
                 }
                 CommandSpacing.AFTER_WORD -> {
                     if (cmd.action.spaceBefore) rep.append(' ')
-                    // the ASR ended a sentence after the command only because you paused: after a
+                    // the ASR ended a sentence after the command only because you paused, so after a
                     // comma, or before a clause that does not end a sentence ("... close quote.
                     // For some reason," -> `" for some reason`), the next word goes on lowercase
                     val continues = nextWord != null && !cmd.endsSentence && words.sentenceStart(e) && '\n' !in words.gaps[e] &&
                         !prevPunct.any { it in ".?!" } && (cmd.action in CONTINUING_MARKS || clauseContinues(words, e))
                     if (continues) nextWord = lowercased(nextWord!!)
                     // a closing mark keeps the sentence's own end in front of it ("doing?"")
-                    // (only when the sentence ends there: ""Hello" to me" continues)
+                    // (only when the sentence ends there, since ""Hello" to me" continues)
                     if (cmd.symbol in CLOSERS && !cmd.isQuoteCombo && (nextWord == null || nextWord!![0].isUpperCase())) {
                         rep.append(prevPunct.filter { it in ".?!" })
                         // or the end the ASR wrote after the command ("on my way close quote. Then")
@@ -648,7 +669,7 @@ object SpokenEdits {
                     // the ASR's sentence end before it is kept when the next word starts a new
                     // sentence ("Call me. (Maybe"), not when it only marked the pause ("Follow #travel")
                     if (nextWord != null && nextWord[0].isUpperCase()) {
-                        // before a quote only a question or exclamation mark: a period there marks the pause
+                        // before a quote only a question or exclamation mark, because a period there marks the pause
                         rep.append(prevPunct.filter { it in (if (cmd.action == VoiceCommandAction.OPEN_QUOTE) "?!" else ".?!") })
                     }
                     if (k > 0) rep.append(' ')
@@ -707,16 +728,16 @@ object SpokenEdits {
     /** "... at five. Scratch that. I'll be there at six." -> remove the previous sentence (or utterance) and the command. */
     private fun scratchGroup(words: Words, k: Int, e: Int, segmentStarts: Set<Int>): Group? {
         if (k == 0) return null
-        // the command stands on its own: a pause/sentence boundary before it, and after it a
+        // the command stands on its own, with a pause/sentence boundary before it, and after it a
         // sentence end, a comma, a pause or the text end
         if (!(words.sentenceStart(k) || k in segmentStarts)) return null
         val afterOk = e == words.size || words.sentenceStart(e) || e in segmentStarts || words.punctBefore(e).contains(',')
         if (!afterOk) return null
-        // what is scratched: back to the start of the previous sentence or utterance, whichever is closer
+        // what is scratched goes back to the start of the previous sentence or utterance, whichever is closer
         var s = k - 1
         while (s > 0 && !words.sentenceStart(s) && s !in segmentStarts) s--
         if (s >= k || (s == 0 && e == words.size)) return null
-        // "delete that" is also an ordinary request ("I sent you a photo. Delete that."): only
+        // "delete that" is also an ordinary request ("I sent you a photo. Delete that."), so only
         // when the user then says the sentence again (a content word in common)
         // ("delete last sentence" is explicit enough on its own)
         if (words.norm.subList(k, e) == listOf("delete", "that")) {
@@ -728,7 +749,7 @@ object SpokenEdits {
         }
         val end = if (e < words.size) words.starts[e] else words.text.length
         val start = words.starts[s]
-        // at the text end nothing follows: drop the trailing gap too
+        // at the text end nothing follows, so drop the trailing gap too
         val a = if (e == words.size && s > 0) {
             // keep the previous sentence's final punctuation, drop the space after it
             val ws = words.gaps[s].indexOfFirst { it.isWhitespace() }
@@ -760,8 +781,8 @@ object SpokenEdits {
 
     /**
      * Triggers after which whatever follows is what was said ("I was like ...", "she goes ...").
-     * After the others ("said", "went", "told him") a filler is only a hesitation: "I went, um,
-     * to the doctor", "she said, um, that she'd be late".
+     * After the others ("said", "went", "told him") a filler is only a hesitation ("I went, um,
+     * to the doctor", "she said, um, that she'd be late").
      */
     private val QUOTATIVE_TRIGGERS = setOf(
         listOf("was", "like"), listOf("were", "like"), listOf("is", "like"), listOf("are", "like"), listOf("am", "like"),
@@ -771,7 +792,7 @@ object SpokenEdits {
 
     /**
      * Words that start what someone did or what something was, not what they said ("he yelled at
-     * me!", "she said that?", "they were all there!"): not quoted unless it is a question.
+     * me!", "she said that?", "they were all there!"), so not quoted unless it is a question.
      */
     private val NOT_SPEECH_STARTS = setOf(
         "at", "to", "for", "about", "with", "from", "into", "onto", "on", "in", "of", "by", "over", "back", "off",
@@ -780,7 +801,7 @@ object SpokenEdits {
     )
 
     /**
-     * Words that start quoted speech only before a pause ("she said, no, I can't"): they are often
+     * Words that start quoted speech only before a pause ("she said, no, I can't"), because they are often
      * just what was said ("said no to the offer", "said sorry to the neighbors", "said hi to everyone").
      */
     private val QUOTE_STARTERS_BEFORE_PAUSE = setOf(
@@ -794,15 +815,15 @@ object SpokenEdits {
     private val PRONOUNS = setOf("you", "we", "they", "i", "he", "she", "it")
 
     /**
-     * "and I was like um what are you doing" -> `and I was like "Um, what are you doing?"`: after a
+     * "and I was like um what are you doing" -> `and I was like "Um, what are you doing?"`. After a
      * person and "was like" / "said" / "asked" / "goes", the rest of the sentence is put in quotes
-     * when it can only be quoted speech: it starts with a filler or interjection ("um", "hey",
+     * when it can only be quoted speech, meaning it starts with a filler or interjection ("um", "hey",
      * "wow"), is a question ("what are you doing"), or the voice model ended it with ? or !.
      */
     /** Words of an interjection said on its own before quoted speech ("um.", "oh my god!", "oh no."). */
     private val LEAD_WORDS = FILLERS + setOf("oh", "wow", "whoa", "ugh", "omg", "my", "god", "gosh", "goodness", "no")
 
-    /** [isWord]: a common lowercase word (lowercased after a pause that becomes a comma inside the quote). */
+    /** [isWord] tells whether a word is a common lowercase word (lowercased after a pause that becomes a comma inside the quote). */
     fun quoteGroups(
         words: Words, triggers: List<List<String>> = DEFAULT_QUOTE_TRIGGERS, isWord: ((String) -> Boolean)? = null,
     ): List<Group> {
@@ -818,7 +839,7 @@ object SpokenEdits {
                 start + tw.size < words.size && words.norm.subList(start, start + tw.size) == tw &&
                     (1 until tw.size).none { words.sentenceStart(start + it) }
             }
-            // a phrase counts after a person ("she said", "I was like"); "like" alone after "I'm", "she's", ...
+            // a phrase counts after a person ("she said", "I was like"), and "like" alone after "I'm", "she's", ...
             val trigOk = trig != null && (if (trig == listOf("like")) words.norm[start - 1] in CONTRACTED_BE else person(start - 1))
             if (!trigOk) {
                 start++
@@ -827,10 +848,10 @@ object SpokenEdits {
             val i = start + trig!!.size - 1
             start = i + 1
             val q = i + 1
-            // the quoted words: up to the end of the sentence, 1 to 20 words
+            // the quoted words go up to the end of the sentence, 1 to 20 words
             var c = q + 1
             while (c < words.size && !words.sentenceStart(c)) c++
-            // the voice model ends a sentence at every pause: an interjection said on its own ("I was
+            // the voice model ends a sentence at every pause, so an interjection said on its own ("I was
             // like, um. What are you doing?", "she goes, oh no. Not again.") opens the next sentence
             val quotative = trig in QUOTATIVE_TRIGGERS
             var joinAt = -1
@@ -855,7 +876,7 @@ object SpokenEdits {
             val fillerStart = first in FillerWords.SOUNDS
             val body = if (fillerStart && q + 1 < c) q + 1 else q
             val bodyFirst = words.norm[body]
-            // (a filler right after "was like" / "goes" opens quoted speech; after "said", "went", ... it is a hesitation)
+            // (a filler right after "was like" / "goes" opens quoted speech, but after "said", "went", ... it is a hesitation)
             // "what are ...", "why did ...", or "can you ...", "are we ..."
             val isQuestion = c - body >= 2 && (
                 (words.norm[body] in WH_WORDS && words.norm[body + 1] in AUX_VERBS) ||
@@ -873,7 +894,7 @@ object SpokenEdits {
                 asrEnd != null -> asrEnd
                 else -> '.'
             }
-            // the replacement: from the end of "like"/"said" to the end of the sentence's own mark
+            // the replacement runs from the end of "like"/"said" to the end of the sentence's own mark
             val markLen = finalGap.indexOfFirst { it.isWhitespace() }.let { if (it < 0) finalGap.length else it }
             val end = (if (c < words.size) words.ends[c - 1] else words.ends[words.size - 1]) + markLen
             val sb = StringBuilder(" \"")
@@ -882,7 +903,7 @@ object SpokenEdits {
                 if (k == q) w = capitalizeFirst(w)
                 if (k > q) {
                     var gap = words.gaps[k]
-                    // a comma after a leading filler: "Um, what are you doing?"
+                    // a comma after a leading filler ("Um, what are you doing?")
                     if (k == q + 1 && first in FillerWords.SOUNDS && TranscriptGuard.punct(gap).isEmpty()) gap = ", "
                     // the pause after the interjection ("um. What") is a comma inside the quote
                     // ("hey! Can you" keeps its mark)
@@ -898,7 +919,7 @@ object SpokenEdits {
             }
             sb.append(mark).append('"')
             // a quote that opens with a filler or interjection ("I was like, um, ...") can only be
-            // quoted speech: applied without the LM's vote (quotation marks look unlikely to it).
+            // quoted speech, applied without the LM's vote (quotation marks look unlikely to it).
             // So can a question or "no," / "hey," said after a pause ("she goes, what are you
             // doing?", "I said, no, I can't")
             val pauseAfterTrigger = TranscriptGuard.punct(words.gaps[q]).any { it in ",:—–-" }
@@ -943,7 +964,7 @@ object SpokenEdits {
     }
 
     /**
-     * "That's hilarious laughing emoji" -> "That's hilarious 😂": the name said right before
+     * "That's hilarious laughing emoji" -> "That's hilarious 😂". The name said right before
      * "emoji" (the longest one in [names], 1 to [EmojiNames.MAX_WORDS] words) becomes the emoji.
      * Not when the words talk about an emoji ("the laughing emoji is my favorite", "send a heart emoji").
      */
@@ -955,19 +976,19 @@ object SpokenEdits {
             if (kw == 0) continue
             val nameEnd = k - kw + 1  // the first word of "emoji" ("at Mojie" is two)
             if (kw == 2 && words.sentenceStart(k)) continue
-            // the name: the longest known name ending right before "emoji", within one sentence
+            // the name is the longest known name ending right before "emoji", within one sentence
             var start = -1
             var emoji: String? = null
             val emojiAlone = words.sentenceEndBefore(k + 1) || ',' in words.punctBefore(k + 1)
             for (n in minOf(EmojiNames.MAX_WORDS, nameEnd) downTo 1) {
                 val s = nameEnd - n
                 // the punctuation model may also split the name ("Crying? Laughing emoji?"), so a
-                // sentence break inside it is allowed; the longest name still wins
+                // sentence break inside it is allowed, and the longest name still wins
                 // the punctuation model may make "emoji" a sentence of its own ("Mind blown. Emoji.")
                 if (words.sentenceStart(nameEnd) && !emojiAlone) continue
-                // names are stored without hyphens: "mind-blown" matches "mind blown"
+                // names are stored without hyphens, so "mind-blown" matches "mind blown"
                 val e = names[words.norm.subList(s, nameEnd).flatMap { VoiceCommands.phraseWords(it) }] ?: continue
-                // a name that gives no emoji (it fits several, or is switched off): none, not a shorter name's
+                // a name that gives no emoji (it fits several, or is switched off) gives none, not a shorter name's
                 if (e.isEmpty()) break
                 start = s
                 emoji = e
@@ -984,7 +1005,7 @@ object SpokenEdits {
             var b = words.ends[k]
             var replacement: String = emoji
             // an emoji that ends the text or is a sentence of its own takes no full stop or question
-            // mark ("Now? Laughing emoji?" -> "Now? 😂"): the voice model's, not said. A question
+            // mark ("Now? Laughing emoji?" -> "Now? 😂") because they are the voice model's, not said. A question
             // the emoji ends keeps its question mark before it ("Coming tonight? 👍").
             if (words.sentenceEndBefore(k + 1)) {
                 val marks = words.gaps[k + 1].takeWhile { it == '.' || it == '?' }
@@ -1008,11 +1029,17 @@ object SpokenEdits {
         for (c in NumberWords.candidates(words.words, words.gaps) { words.sentenceStart(it) }) {
             val a = words.starts[c.start]
             var b = words.ends[c.end - 1]
-            // "p.m." mid-sentence: its final dot is part of the abbreviation
+            // "p.m." mid-sentence keeps its final dot because it is part of the abbreviation
             if (words.norm[c.end - 1] == "m" && c.end < words.size && words.gaps[c.end].startsWith(".") &&
                 words.words[c.end][0].isLowerCase()) b += 1
             val alts = c.forms.map { SpanEdit(a, b, it, Kind.NUMBER, words.text.substring(a, b)) }
-            out.add(Group(Kind.NUMBER, alts, "number"))
+            // an amount said with its unit ("six hundred dollars", "fifty percent") is always
+            // written with digits, even where the LM prefers words (at a sentence start)
+            out.add(Group(Kind.NUMBER, alts, "number", certain = c.forms.all { NumberWords.isAmount(it) }))
+        }
+        // digits the voice model wrote, the unit as a word ("800 dollars" -> "$800")
+        for ((a, b, form) in NumberWords.digitAmounts(words.text)) {
+            out.add(Group(Kind.NUMBER, listOf(SpanEdit(a, b, form, Kind.NUMBER, words.text.substring(a, b))), "number", certain = true))
         }
         return out
     }
@@ -1052,7 +1079,7 @@ object SpokenEdits {
     }
 
     /**
-     * Indices k of the text's words where the ASR itself put no break before word k: words k-1
+     * Indices k of the text's words where the ASR itself put no break before word k, meaning words k-1
      * and k are in the same segment with no sentence mark between them. A sentence break the text
      * has there was made by the punctuation stage. Words that cannot be aligned are left out.
      */

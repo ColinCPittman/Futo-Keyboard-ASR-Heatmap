@@ -122,7 +122,7 @@ data class InstalledModelPackage(
     val name: String get() = manifest.name
 }
 
-/** Filesystem part of model packages (pure JVM; ModelPackages adds Android paths). */
+/** Filesystem part of model packages (pure JVM, and ModelPackages adds Android paths). */
 class ModelPackageStore(val root: File) {
     fun kindDir(kind: String): File = File(root, kind)
 
@@ -153,7 +153,7 @@ class ModelPackageStore(val root: File) {
     }
 
     /**
-     * Extracts a package zip from [input] (streamed; the zip is never held in
+     * Extracts a package zip from [input] (streamed, so the zip is never held in
      * memory), validates it and moves it into place, replacing an existing
      * package with the same kind and id. [onProgress] gets (bytes extracted,
      * total uncompressed bytes so far is unknown, so the second argument is
@@ -205,7 +205,7 @@ class ModelPackageStore(val root: File) {
             if (entry == null) throw ModelPackageException("Empty or invalid zip file")
             while (entry != null) {
                 val name = entry.name.replace('\\', '/')
-                // Zip-slip protection: refuse anything resolving outside dest.
+                // Zip-slip protection means refusing anything resolving outside dest.
                 val out = File(canonicalDest, name).canonicalFile
                 if (!out.path.startsWith(destPrefix)) {
                     throw ModelPackageException("Illegal path in package: ${entry.name}")
@@ -241,7 +241,7 @@ class ModelPackageStore(val root: File) {
         private const val MAX_TOTAL_BYTES = 4L * 1024 * 1024 * 1024
         private const val MAX_MANIFEST_BYTES = 64 * 1024
 
-        /** Kind-specific validation; returns problems (empty if OK). */
+        /** Kind-specific validation that returns problems (empty if OK). */
         fun validate(manifest: ModelPackageManifest, dir: File): List<String> = when (manifest.kind) {
             ModelPackageKinds.MOONSHINE_STREAMING -> MoonshineModelFiles.validateDirectory(dir)
             ModelPackageKinds.PUNCTUATION -> PunctuationRestorers.validate(manifest.engine, dir)

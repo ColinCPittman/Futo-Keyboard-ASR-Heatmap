@@ -25,7 +25,7 @@ SENTENCE_END = set(".?!")
 
 
 # ----------------------------------------------------------------------------
-# Tokenizing: text = gap[0] word[0] gap[1] word[1] ... word[n-1] gap[n]
+# Tokenizing, so that text = gap[0] word[0] gap[1] word[1] ... word[n-1] gap[n]
 
 def _is_word_char(c: str) -> bool:
     return c.isalnum()
@@ -66,7 +66,7 @@ def norm_word(w: str) -> str:
 
 
 # ----------------------------------------------------------------------------
-# Alignment: LCS over normalized words -> list of blocks
+# Alignment is an LCS over normalized words -> list of blocks
 
 @dataclass
 class Block:
@@ -128,7 +128,7 @@ def _is_negation(w: str) -> bool:
 
 
 # Swapping two of these changes tense/person/modality, never a mishearing worth fixing
-# ("is" -> "was", "can" -> "could", "he" -> "she"); "are" -> "our" etc. still allowed.
+# ("is" -> "was", "can" -> "could", "he" -> "she"), but "are" -> "our" etc. still allowed.
 FUNCTION_LOCK = {
     "is", "was", "are", "were", "am", "be", "been", "being", "has", "have", "had", "do", "does",
     "did", "will", "would", "can", "could", "shall", "should", "may", "might", "must",
@@ -181,7 +181,7 @@ def sounds_alike(a: str, b: str) -> tuple[bool, str]:
                 if len(x) == 1 and min(len(a), len(b)) <= 1:
                     return False, "too-short"
                 return True, f"metaphone {x}"
-    # (A looser "codes within edit distance 1" rule was tried and dropped: it lets
+    # (A looser "codes within edit distance 1" rule was tried and dropped, because it lets
     # break -> brain and whether -> leather through.)
     return False, f"codes {'/'.join(ca)} vs {'/'.join(cb)}"
 
@@ -219,7 +219,7 @@ def choose_gap(in_gap: str, out_gap: str, is_last: bool) -> tuple[str, bool]:
         return in_gap, False
     # Only change the TYPE of an existing mark (", and" -> "? And", "here." -> "here?").
     # Adding a mark between words or deleting one is the punctuation model's job.
-    # Exception: the end of the text may gain a final mark.
+    # One exception is that the end of the text may gain a final mark.
     if not pout or (not pin and not is_last):
         return in_gap, False
     # never drop a question/exclamation mark the ASR produced
@@ -270,7 +270,7 @@ def guard(inp: str, out: str) -> GuardResult:
         return res
     blocks = align([norm_word(w) for w in iw], [norm_word(w) for w in ow])
 
-    # One entry per result word: [input-side form, output-side form, gap before it in the
+    # One entry per result word, as [input-side form, output-side form, gap before it in the
     # input, gap before it in the output, whether the output's casing may be used]
     words: list[list] = []
     gaps_after: list[str] = []
@@ -304,7 +304,7 @@ def guard(inp: str, out: str) -> GuardResult:
             elif len(src) <= 2 and len(dst) <= 2:
                 ok, why = joined_sounds_alike(src, dst)
             elif len(src) == len(dst):
-                # several adjacent substitutions: accept only if every pair sounds alike
+                # several adjacent substitutions are accepted only if every pair sounds alike
                 pairs = [sounds_alike(x, y) for x, y in zip(src, dst)]
                 ok = all(p[0] for p in pairs)
                 why = "; ".join(p[1] for p in pairs)
@@ -325,7 +325,7 @@ def guard(inp: str, out: str) -> GuardResult:
         elif b.op == "insert":
             res.decisions.append(Decision("insert", "", " ".join(ow[b.j1:b.j2]), False, "insertion"))
             # the gap after the previous word was taken from the output, which preceded
-            # the inserted words; re-take it against the gap after the insert
+            # the inserted words, so re-take it against the gap after the insert
             if words:
                 gaps_after[-1] = choose_gap(ig[b.i1], og[b.j2] if b.j2 < len(og) else "", b.i1 == n_in)[0]
 
@@ -337,7 +337,7 @@ def guard(inp: str, out: str) -> GuardResult:
 
     # Casing pass. The output's first-letter case is used only where the output's
     # sentence structure around the word matches the final one (so a rejected "?"
-    # cannot leave a stray capital behind); words that now start a sentence get
+    # cannot leave a stray capital behind), and words that now start a sentence get
     # capitalized.
     text = ig[0]
     for k, (w_in, w_out, g_in, g_out, use_out) in enumerate(words):
@@ -396,7 +396,7 @@ def strip_echo(before: str | None, out: str) -> str:
 
 
 # ----------------------------------------------------------------------------
-# Edits-only format: lines "wrong -> right", or NONE.
+# Edits-only format is lines "wrong -> right", or NONE.
 
 def parse_edits(raw: str) -> list[tuple[str, str]]:
     edits = []

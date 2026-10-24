@@ -70,7 +70,7 @@ class LearnedWordCandidatesTest {
             assertTrue(store.all().isEmpty())
 
             store.add("McKenna")
-            store.add("mckenna") // same word, different case: kept once
+            store.add("mckenna") // same word in a different case, kept once
             store.add("Brontë")
             store.add("  ")
             assertEquals(listOf("McKenna", "Brontë"), store.all())

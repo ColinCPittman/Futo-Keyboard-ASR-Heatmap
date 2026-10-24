@@ -36,7 +36,7 @@ internal class HfBpeTokenizer private constructor(
     fun encodeWord(word: String): IntArray {
         if (word.isEmpty()) return IntArray(0)
         val text = "▁$word"
-        // initial symbols: one per code point, with byte fallback for characters not in the vocabulary
+        // initial symbols (one per code point, with byte fallback for characters not in the vocabulary)
         val sym = ArrayList<Int>(text.length)
         var i = 0
         while (i < text.length) {
@@ -58,8 +58,8 @@ internal class HfBpeTokenizer private constructor(
             }
             i += len
         }
-        // BPE: repeatedly merge the adjacent pair with the lowest rank
-        // (a merged symbol must exist in the vocabulary; ids are tracked, strings rebuilt via pieceString)
+        // BPE repeatedly merges the adjacent pair with the lowest rank
+        // (a merged symbol must exist in the vocabulary, and ids are tracked while strings are rebuilt via pieceString)
         val strs = ArrayList<String>(sym.size)
         for (id in sym) strs.add(pieceOf(id))
         while (sym.size > 1) {

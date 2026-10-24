@@ -203,7 +203,7 @@ public final class WordComposer {
     public void applyProcessedEvent(final Event event) {
         if (Constants.CODE_DELETE == event.mKeyCode && mCodePointSize > 0 && !mIsBatchMode
                 && !mIsResumed) {
-            // A backspace inside the word being typed: keep the original attempt (with its taps) so
+            // A backspace inside the word being typed keeps the original attempt (with its taps) so
             // the typing heatmap can learn what the user meant once the word is finished.
             TypingHeatmap.onComposingDelete(mTypedWordCache.toString(),
                     mTapRecorder.snapshot(mCodePointSize));
@@ -345,7 +345,7 @@ public final class WordComposer {
      * @return Returns false if the combiner chain has refused to set composing word
      */
     public boolean setComposingWord(final int[] codePoints, final int[] coordinates) {
-        // The user went back to an existing word (e.g. to fix it): don't learn from the last one
+        // The user went back to an existing word (e.g. to fix it), so don't learn from the last one
         TypingHeatmap.onWordResumed(codePoints);
         reset(true);
         final int length = codePoints.length;

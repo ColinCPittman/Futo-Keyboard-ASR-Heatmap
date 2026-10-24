@@ -69,7 +69,7 @@ class HeatmapLayoutTest {
 
     @Test
     fun regionMovesWithLearnedOffsetSoTopEdgeGoesToRowAbove() {
-        // Consequence of the shift: a tap at the very top edge of 's' is now more likely meant
+        // Consequence of the shift is that a tap at the very top edge of 's' is now more likely meant
         // for the row above.
         val layout = trainedLowMiddleRow()
         val s = key('s')
@@ -99,7 +99,7 @@ class HeatmapLayoutTest {
         val s = key('s')
         val d = key('d')
         val y = s.centerY.toInt()
-        // Stock boosting: boosted 'd' wins where distance to the edge of 'd' is smaller than the
+        // Stock boosting means boosted 'd' wins where distance to the edge of 'd' is smaller than the
         // distance to the centre of 's'.
         for (x in s.hitLeft until s.hitRight) {
             val stockBoostWins = (d.x - x).toFloat() < abs(x - s.centerX)

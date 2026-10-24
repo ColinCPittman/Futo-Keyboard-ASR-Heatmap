@@ -35,7 +35,7 @@ TAG_WORDS = {"right", "okay", "ok", "yeah", "correct", "huh", "no", "yes", "real
 
 
 # ----------------------------------------------------------------------------
-# Lexicon: sound-alike candidates
+# Lexicon of sound-alike candidates
 
 class Lexicon:
     def __init__(self, n_words=60000, min_zipf=3.0):
@@ -151,7 +151,7 @@ def correct(text: str, sc: Scorer, lex: Lexicon, args, focus: int = 0) -> dict:
     v = r["variants"][0]
     pieces, lps, alts = v["pieces"], v["lps"], v["alts"]
     offs = token_offsets(pieces)
-    # the decoded text may have a leading space difference; align by stripping
+    # the decoded text may have a leading space difference, so align by stripping
     joined = "".join(pieces)
     shift = joined.find(text[:20]) if not joined.startswith(text[:20]) else 0
     shift = max(0, shift)
@@ -170,8 +170,8 @@ def correct(text: str, sc: Scorer, lex: Lexicon, args, focus: int = 0) -> dict:
 
     edits = []  # (start, end, replacement, kind, delta)
     # --- words
-    # first-token probe: drop candidates the LM already finds much less likely than the
-    # original word at that position (left context only; right context comes later)
+    # first-token probe that drops candidates the LM already finds much less likely than the
+    # original word at that position (left context only, since right context comes later)
     kept = {}
     for k, pr in zip(probe_keys, v.get("probes", [])):
         if not pr:
@@ -184,7 +184,7 @@ def correct(text: str, sc: Scorer, lex: Lexicon, args, focus: int = 0) -> dict:
     cand_words = sorted(cand_words, key=lambda k: surpr[k])[: args.max_words]
     for k in cand_words:
         a, b = spans[k]
-        # window: through the end of the word's sentence plus a few following words
+        # window runs through the end of the word's sentence plus a few following words
         m = re.search(r"[.?!](\s|$)", text[b:])
         end = b + (m.end() if m else len(text) - b)
         tail_words = re.match(r"(\S+\s+){0,%d}" % args.tail_words, text[end:])
@@ -200,7 +200,7 @@ def correct(text: str, sc: Scorer, lex: Lexicon, args, focus: int = 0) -> dict:
         if delta > args.word_margin:
             edits.append((a, b, cands[best - 1], "word", delta))
 
-    # --- tag questions ("..., right, and" -> "right? And"): P("?") vs P(",") after tag words
+    # --- tag questions ("..., right, and" -> "right? And") compare P("?") vs P(",") after tag words
     q_edits = []
     for i, piece in enumerate(pieces):
         if piece.strip() != ",":
@@ -219,7 +219,7 @@ def correct(text: str, sc: Scorer, lex: Lexicon, args, focus: int = 0) -> dict:
             t = t[:a] + rep + t[b:]
         return re.sub(r"[?] ([a-z])", lambda m: "? " + m.group(1).upper(), t)
 
-    # --- sentence-final questions: P("?") vs P(".") at each sentence end. If words or
+    # --- sentence-final questions compare P("?") vs P(".") at each sentence end. If words or
     # tags were changed, re-score the edited text first (one more prefill pass) so the
     # decision sees the corrected sentence ("... right? And bowls and spoons and things?").
     text2 = apply(text, edits)
@@ -292,8 +292,8 @@ def main():
     with open(out_path, "w", encoding="utf-8") as f:
         for it in items:
             if args.stream:
-                # per-sentence: each finalized sentence is corrected as it arrives, with the
-                # already-corrected earlier sentences as context; only the last step runs after "Done"
+                # per-sentence, so each finalized sentence is corrected as it arrives, with the
+                # already-corrected earlier sentences as context, and only the last step runs after "Done"
                 done, steps, edits, decs, ncw = "", [], [], [], 0
                 for snt in split_sentences(it["input"]):
                     t = (done + " " + snt) if done else snt

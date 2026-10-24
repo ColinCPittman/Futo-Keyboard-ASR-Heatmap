@@ -65,7 +65,7 @@ class TapAlignerTest {
         assertEquals(AlignmentRejection.LENGTH_MISMATCH, align("the", "the", taps("th")).rejection)
         assertEquals(AlignmentRejection.NOT_PLAIN_TAP, align("the", "the", taps("the", plain = false)).rejection)
         assertEquals(AlignmentRejection.TAP_TEXT_MISMATCH, align("the", "the", taps("thr")).rejection)
-        // Too many substitutions: probably a different word was picked
+        // Too many substitutions, so probably a different word was picked
         assertEquals(AlignmentRejection.TOO_MANY_SUBSTITUTIONS, align("cat", "dog", taps("cat")).rejection)
         assertEquals(AlignmentRejection.TOO_MANY_SUBSTITUTIONS, align("if", "of", taps("if")).rejection)
         // Transposition would misalign taps with letters
@@ -103,8 +103,8 @@ class TapAlignerTest {
         val rec = TapRecorder(4)
         rec.record(0, 'a'.code, 1, 2, true)
         rec.record(1, 'x'.code, 3, 4, true)
-        rec.record(1, 'b'.code, 5, 6, false) // deleted and retyped: overwritten
-        rec.record(9, 'z'.code, 0, 0, true) // out of range: ignored
+        rec.record(1, 'b'.code, 5, 6, false) // deleted and retyped, so overwritten
+        rec.record(9, 'z'.code, 0, 0, true) // out of range, so ignored
         val s = rec.snapshot(2)!!
         assertEquals('b'.code, s[1].codePoint)
         assertEquals(5, s[1].x)

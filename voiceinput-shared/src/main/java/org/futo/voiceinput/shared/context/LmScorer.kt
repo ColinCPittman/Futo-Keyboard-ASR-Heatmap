@@ -2,13 +2,13 @@ package org.futo.voiceinput.shared.context
 
 /**
  * Port of ctxrun's scoring server (tools/context-bench/ctxrun/ctxrun.cpp, --score) on top
- * of [ContextLm]: every text is scored after a fixed prompt [prefix].
+ * of [ContextLm], where every text is scored after a fixed prompt [prefix].
  *
- *  * [detail]: one full pass over a text, which becomes the base. Returns per-token pieces
+ *  * [detail] is one full pass over a text, which becomes the base. Returns per-token pieces
  *    and log-probs, the log-probs of [alts] tokens at every position (e.g. "?" vs "."), and
- *    "probes": the log-probs of candidate words' first tokens where a word starts. Tokens
+ *    "probes", the log-probs of candidate words' first tokens where a word starts. Tokens
  *    shared with the previous base are not decoded again (unless a probe needs them).
- *  * [score]: total log-probs of variants of the base; only the tokens after the first
+ *  * [score] gives total log-probs of variants of the base, and only the tokens after the first
  *    difference are decoded, all variants together.
  */
 class LmScorer(private val lm: ContextLm, val prefix: String) {
@@ -31,7 +31,7 @@ class LmScorer(private val lm: ContextLm, val prefix: String) {
         val lps: FloatArray,
         /** Per position, the log-probs of the alts tokens. */
         val alts: Array<FloatArray>,
-        /** Per probe (same order as requested): candidates' log-probs then the original token's; empty if not found. */
+        /** Per probe (same order as requested), the candidates' log-probs then the original token's (empty if not found). */
         val probes: List<FloatArray>,
     ) {
         private val textBytes = text.toByteArray(Charsets.UTF_8)
@@ -50,7 +50,7 @@ class LmScorer(private val lm: ContextLm, val prefix: String) {
             map
         }
 
-        // rescore.py: the decoded text may start differently; align on the first 20 characters
+        // rescore.py notes the decoded text may start differently, so align on the first 20 characters
         private val shift: Int = run {
             val joined = java.io.ByteArrayOutputStream().also { o -> pieces.forEach { o.write(it) } }.toByteArray()
             val head = text.take(20).toByteArray(Charsets.UTF_8)
@@ -93,7 +93,7 @@ class LmScorer(private val lm: ContextLm, val prefix: String) {
                 off += pieces[i].size
             }
         }
-        // probes: [char offset, words] -> token index starting there (after leading spaces)
+        // probes as [char offset, words] -> token index starting there (after leading spaces)
         val probeTokens = Array(n) { ArrayList<Int>() }
         val probeWhere = ArrayList<Pair<Int, Int>>()
         for ((c, words) in probes) {
@@ -112,7 +112,7 @@ class LmScorer(private val lm: ContextLm, val prefix: String) {
             }
             probeWhere.add(ti to cnt)
         }
-        // reuse the part shared with the previous base; probes need fresh logits
+        // reuse the part shared with the previous base, but probes need fresh logits
         var l = 0
         if (altIds == baseAltIds) {
             while (l < n && l < baseText.size && textToks[l] == baseText[l]) l++
@@ -153,7 +153,7 @@ class LmScorer(private val lm: ContextLm, val prefix: String) {
             if (ti < 0) FloatArray(0) else {
                 val out = FloatArray(cnt + 1)
                 for (q in 0 until cnt) out[q] = probeLp[ti][used[ti]++]
-                out[cnt] = lp[ti]  // last entry: the original token
+                out[cnt] = lp[ti]  // the last entry is the original token
                 out
             }
         }
@@ -165,7 +165,7 @@ class LmScorer(private val lm: ContextLm, val prefix: String) {
         return Detail(text, pieces, pieceOff, lp, alt, probeOut)
     }
 
-    /** A scored variant: its text tokens, their log-probs and the total. */
+    /** A scored variant, with its text tokens, their log-probs and the total. */
     class Scored(val tokens: IntArray, val lps: FloatArray, val total: Double)
 
     /** Total log-prob of each variant (all of which must share the prompt with the base). */

@@ -1,7 +1,7 @@
 package org.futo.inputmethod.latin.heatmap
 
 /**
- * A synthetic QWERTY letter layout resembling what LayoutEngine produces: 100x150px cells,
+ * A synthetic QWERTY letter layout resembling what LayoutEngine produces, with 100x150px cells,
  * visual keys of 90x130px at the top-left of each cell, hitbox = whole cell, and the 'a'/'l'
  * hitboxes extended to the keyboard edges. Row 2 has (non-letter) shift and delete keys on the
  * sides, which are not part of the heatmap layout.
@@ -49,7 +49,7 @@ object SyntheticKeyboard {
         params
     )
 
-    /** Stock detection: the letter key whose hitbox contains the point, or null. */
+    /** Stock detection, giving the letter key whose hitbox contains the point, or null. */
     fun stockKey(x: Int, y: Int): Char? = keys.firstOrNull { it.contains(x, y) }?.code?.toChar()
 
     /** Heatmap selection, mirroring HeatmapKeyboardBinding (all letter keys are candidates). */

@@ -3,8 +3,8 @@ package org.futo.voiceinput.shared.context
 /**
  * Deterministic guard for the context stage, ported 1:1 from tools/context-bench/guard.py.
  *
- * Diffs a proposed text against the input at word level and only lets through:
- *  * punctuation changes between words (from a small allowed set; only the type of an
+ * Diffs a proposed text against the input at word level and only lets through these changes.
+ *  * punctuation changes between words (from a small allowed set, and only the type of an
  *    existing mark may change, plus a final mark at the very end),
  *  * first-letter capitalization changes,
  *  * word substitutions where the two words sound alike (Double Metaphone),
@@ -33,7 +33,7 @@ object TranscriptGuard {
     class Tokens(val words: List<String>, val gaps: List<String>)
 
     // ------------------------------------------------------------------------------------
-    // Tokenizing: text = gap[0] word[0] gap[1] word[1] ... word[n-1] gap[n]
+    // Tokenizing (text = gap[0] word[0] gap[1] word[1] ... word[n-1] gap[n])
 
     private fun isWordChar(c: Char) = c.isLetterOrDigit()
 
@@ -70,7 +70,7 @@ object TranscriptGuard {
     fun normWord(w: String): String = w.lowercase().replace('’', '\'')
 
     // ------------------------------------------------------------------------------------
-    // Alignment: LCS over normalized words -> blocks
+    // Alignment (LCS over normalized words -> blocks)
 
     fun align(a: List<String>, b: List<String>): List<Block> {
         val n = a.size
@@ -223,13 +223,13 @@ object TranscriptGuard {
         if (pin == pout) return inGap to false
         if (!pin.all { it in ALLOWED_PUNCT } || !pout.all { it in ALLOWED_PUNCT }) return inGap to false
         if (pout.length > 2) return inGap to false
-        // Only change the TYPE of an existing mark; the end of the text may gain a final mark.
+        // Only change the TYPE of an existing mark (the end of the text may gain a final mark).
         if (pout.isEmpty() || (pin.isEmpty() && !isLast)) return inGap to false
         // never drop a question/exclamation mark the ASR produced
         for (c in "?!") {
             if (c in pin && c !in pout) return inGap to false
         }
-        // keep line breaks (spoken "new line" commands); otherwise one space
+        // keep line breaks (spoken "new line" commands) and otherwise use one space
         val ws = when {
             isLast -> ""
             '\n' in inGap -> inGap.filter { it.isWhitespace() }
@@ -250,13 +250,13 @@ object TranscriptGuard {
      * [LEGACY] (no policy) is the original guard.py behaviour.
      */
     class Policy(
-        /** Merges/splits ("in to" -> "into") are allowed only if this lists them; null: legacy joined-spelling test. */
+        /** Merges/splits ("in to" -> "into") are allowed only if this lists them (null means the legacy joined-spelling test). */
         val boundary: ((src: List<String>, dst: List<String>) -> Boolean)? = null,
         /** Personal-dictionary names that sound like the replaced words may be substituted. */
         val names: PersonalNames? = null,
         /** Case-only changes of words that don't start a sentence ("Toaster" -> "toaster", "jordan" -> "Jordan"). */
         val caseChanges: Boolean = false,
-        /** false: case changes away from sentence starts are not checked (legacy behaviour). */
+        /** If false, case changes away from sentence starts are not checked (legacy behaviour). */
         val strictCase: Boolean = false,
     ) {
         companion object {
@@ -264,7 +264,7 @@ object TranscriptGuard {
         }
     }
 
-    /** "I", "I'm", "I'll", ...: their case is never changed. */
+    /** The case of "I", "I'm", "I'll", ... is never changed. */
     fun isPronounI(w: String): Boolean {
         val n = normWord(w)
         return n == "i" || n.startsWith("i'")
@@ -324,7 +324,7 @@ object TranscriptGuard {
                     val nameOk = policy.names != null && dst.size == 1 && src.size in 1..3 &&
                         policy.names.isSoundAlikeName(src, dst[0])
                     // a personal name only replaces words that sound like it and look like a
-                    // misheard name ([PersonalNames.soundAlike]); a compound ("x-ray") is never misheard
+                    // misheard name ([PersonalNames.soundAlike]), and a compound ("x-ray") is never misheard
                     val nameDst = policy.names != null && dst.size == 1 && policy.names.name(dst[0]) == dst[0] &&
                         src.none { normWord(it) == normWord(dst[0]) }
                     if (nameOk) {
@@ -348,7 +348,7 @@ object TranscriptGuard {
                             ok = false; why = "boundary not listed"
                         }
                     } else if (src.size == dst.size) {
-                        // several adjacent substitutions: accept only if every pair sounds alike
+                        // several adjacent substitutions are accepted only if every pair sounds alike
                         val pairs = src.zip(dst).map { (x, y) -> soundsAlike(x, y) }
                         ok = pairs.all { it.first }
                         why = pairs.joinToString("; ") { it.second }
@@ -373,7 +373,7 @@ object TranscriptGuard {
                 "insert" -> {
                     decisions.add(Decision("insert", "", ow.subList(b.j1, b.j2).joinToString(" "), false, "insertion"))
                     // the gap after the previous word was taken from the output, which preceded
-                    // the inserted words; re-take it against the gap after the insert
+                    // the inserted words, so re-take it against the gap after the insert
                     if (words.isNotEmpty()) {
                         gapsAfter[gapsAfter.size - 1] =
                             chooseGap(ig[b.i1], if (b.j2 < og.size) og[b.j2] else "", b.i1 == nIn).first
@@ -387,8 +387,8 @@ object TranscriptGuard {
         fun firstIsLower(w: String) = w.isNotEmpty() && w[0].isLowerCase()
         fun firstIsUpper(w: String) = w.isNotEmpty() && w[0].isUpperCase()
 
-        // Casing pass: the output's first-letter case is used only where the output's sentence
-        // structure around the word matches the final one; words that now start a sentence get
+        // Casing pass. The output's first-letter case is used only where the output's sentence
+        // structure around the word matches the final one, and words that now start a sentence get
         // capitalized.
         val sb = StringBuilder(ig[0])
         for ((k, e) in words.withIndex()) {
@@ -397,7 +397,7 @@ object TranscriptGuard {
             val startI = k == 0 || sentenceEnd(e.gIn)
             val startO = k == 0 || sentenceEnd(e.gOut)
             var w = e.wIn
-            // strict policy: a case change of a word that neither starts nor started a sentence
+            // strict policy. A case change of a word that neither starts nor started a sentence
             // is a capitalization edit, allowed only with that option
             val structural = startF || startI || startO
             if (policy.strictCase && e.useOut && e.wOut != e.wIn && !structural) {
@@ -432,16 +432,18 @@ object TranscriptGuard {
     }
 
     /**
-     * Checks a sentence-break join ([start, end) of [text] = ". Word" -> " word"): the period goes,
-     * the next word keeps its letters and may only lose its first capital (never "I").
+     * Checks a sentence-break join ([start, end) of [text] = ". Word" -> " word"). The period goes,
+     * the next word keeps its letters and may only lose its first capital (never "I"). The period
+     * may also become a comma (", who").
      */
     fun checkBreakJoin(text: String, start: Int, end: Int, replacement: String): Decision {
         val src = text.substring(start, end)
         fun no(why: String) = Decision("breakjoin", src, replacement, false, why)
         if (!Regex("^\\. [^\\s.?!,;:]+$").matches(src)) return no("not a single sentence break")
-        if (!replacement.startsWith(" ") || replacement.length != src.length - 1) return no("not a plain join")
+        val lead = if (replacement.startsWith(", ")) 2 else 1
+        if (!replacement.startsWith(" ") && lead == 1 || replacement.length != src.length - 2 + lead) return no("not a plain join")
         val w = src.substring(2)
-        val r = replacement.substring(1)
+        val r = replacement.substring(lead)
         if (w == r) return Decision("breakjoin", src, replacement, true, "join, capital kept")
         if (isPronounI(w) || !isLowercased(w, r)) return no("word changed")
         return Decision("breakjoin", src, replacement, true, "join, capital dropped")
@@ -452,7 +454,7 @@ object TranscriptGuard {
 
     /**
      * Checks one edit of the fillers / self-corrections / commands / numbers options against
-     * [text] (the text it applies to). Each kind may only do its own thing: deletions of exactly
+     * [text] (the text it applies to). Each kind may only do its own thing, meaning deletions of exactly
      * the words its rule names (leaving only punctuation and spaces behind), digits only as the
      * number parser's written form of the replaced words, line breaks and marks only in place
      * of the spoken command (plus the next word's first-letter case).
@@ -476,7 +478,7 @@ object TranscriptGuard {
         if (e.start > 0 && e.start < text.length && text[e.start - 1].isLetterOrDigit() && text[e.start].isLetterOrDigit()) return no("splits a word")
         if (e.end in 1 until text.length && text[e.end - 1].isLetterOrDigit() && text[e.end].isLetterOrDigit()) return no("splits a word")
         // a filler or self-correction deletion may also lowercase the word after it, which the voice
-        // model capitalized after a pause ("I was. Um. Thinking" -> "I was thinking"): the
+        // model capitalized after a pause ("I was. Um. Thinking" -> "I was thinking"). The
         // deletion is checked on its own
         if ((e.kind == SpokenEdits.Kind.FILLER || e.kind == SpokenEdits.Kind.SELF_CORRECTION) && dw.size == 1 && sw.size >= 2) {
             val last = sw.last()
@@ -515,7 +517,7 @@ object TranscriptGuard {
                 val stk = tokenize(src)
                 val markerAt = sw.size - marker.size
                 val rest = text.substring(e.end)
-                // (or a number corrected by a number: "We need three. Actually, four chairs.")
+                // (or a number corrected by a number, as in "We need three. Actually, four chairs.")
                 fun number(w: String) = NumberWords.isSpokenNumber(w) || (w.isNotEmpty() && w.all { it.isDigit() })
                 val numbers = markerAt > 0 && number(sw[markerAt - 1]) && tokenize(rest).words.firstOrNull()?.let { number(it) } == true
                 for (g in 1 until sw.size) {
@@ -546,7 +548,7 @@ object TranscriptGuard {
                 return if (dst in forms) yes("number") else no("not a written form of these words")
             }
             SpokenEdits.Kind.COMMAND -> {
-                // (the command may be written with hyphens: "close-quote")
+                // (the command may be written with hyphens, as in "close-quote")
                 var cmdLen = 0
                 val cmd = SpokenEdits.punctuationCommands(commands).firstOrNull { c ->
                     cmdLen = SpokenEdits.phraseLength(sn, 0, c.words)
@@ -589,8 +591,8 @@ object TranscriptGuard {
                 if (dst.count { it == '"' } - src.count { it == '"' } != 2) return no("not one pair of quotes")
                 val extra = dst.filter { !it.isLetterOrDigit() && !it.isWhitespace() && it != '"' && it != '\'' && it != '’' }
                 if (extra.any { it !in ",.?!" }) return no("quote edit adds other marks")
-                // (a word after a sentence end the voice model wrote at a pause may be lowercased:
-                // "um. What" -> "Um, what")
+                // (a word after a sentence end the voice model wrote at a pause may be lowercased,
+                // as in "um. What" -> "Um, what")
                 val sGaps = tokenize(src).gaps
                 if (dw.size != sw.size || (1 until dw.size).any { k ->
                         dw[k] != sw[k] && !(sentenceEndInside(sGaps[k]) && isLowercased(sw[k], dw[k]))

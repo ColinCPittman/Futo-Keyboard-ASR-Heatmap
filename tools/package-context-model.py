@@ -22,7 +22,7 @@ import json
 import os
 import zipfile
 
-# Same values as rescore.py's defaults (the design measured on the phone: 46/46 exact).
+# Same values as rescore.py's defaults (the design measured on the phone as 46/46 exact).
 CONFIG = {
     "prompt": "Transcript of a casual voice message:\n",
     "surprise": -4.0,
@@ -35,7 +35,7 @@ CONFIG = {
     "tag_margin": 0.0,
     "follow_margin": -3.0,
     "tag_words": ["right", "okay", "ok", "yeah", "correct", "huh", "no", "yes", "really"],
-    # Smart corrections options (ContextRescoreConfig; tuned on tools/context-bench/testset_*.jsonl)
+    # Smart corrections options (ContextRescoreConfig, tuned on tools/context-bench/testset_*.jsonl)
     "max_extra_slots": 6,
     "boundary_margin": 3.0,
     "split_surprise": -9.0,
@@ -150,7 +150,7 @@ def main():
         z.writestr("context.json", json.dumps(config, indent=2) + "\n")
         z.writestr("NOTICE.txt", notice)
         z.write(args.lexicon, "soundalike-en.lex")
-        # quantized weights barely compress; store them
+        # quantized weights barely compress, so store them
         z.write(args.gguf, "model.gguf", compress_type=zipfile.ZIP_STORED)
     print(f"wrote {args.out} ({os.path.getsize(args.out) / 1e6:.1f} MB)")
 

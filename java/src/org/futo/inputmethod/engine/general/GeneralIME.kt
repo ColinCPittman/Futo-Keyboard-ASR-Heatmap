@@ -336,7 +336,7 @@ class GeneralIME(val helper: IMEHelper) : IMEInterface, WordLearner, SuggestionS
             composingSpanStart, composingSpanEnd,
             Settings.getInstance().current
         )
-        typingCorrections.onSelectionChanged(newSelStart)
+        typingCorrections.onSelectionChanged(newSelStart, newSelEnd)
     }
 
     override fun isGestureHandlingAvailable(): Boolean =

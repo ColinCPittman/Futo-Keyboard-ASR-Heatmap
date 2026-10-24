@@ -37,9 +37,9 @@ internal object LlamaNative {
 }
 
 /**
- * [ContextLm] backed by llama.cpp (libfutoctxlm). The GGUF is memory-mapped; the KV cache
+ * [ContextLm] backed by llama.cpp (libfutoctxlm). The GGUF is memory-mapped, and the KV cache
  * is sized for the transcript at hand ([ensureCapacity]) and grows when needed.
- * Not thread-safe: use from one thread (or under a lock) at a time.
+ * Not thread-safe, so use from one thread (or under a lock) at a time.
  */
 class LlamaContextLm private constructor(private var handle: Long) : ContextLm {
     private var nCtx = 0
@@ -96,11 +96,11 @@ class LlamaContextLm private constructor(private var handle: Long) : ContextLm {
 
         private fun roundUp(x: Int, m: Int) = (x + m - 1) / m * m
 
-        /** Desktop tools: use libfutoctxlm from [path] instead of the app's native library directory. */
+        /** Desktop tools can use libfutoctxlm from [path] instead of the app's native library directory. */
         fun loadLibraryFrom(path: String) = LlamaNative.loadFrom(path)
 
         /**
-         * Memory-maps [model] (GGUF) and prepares a small context. [cpus]: optional core ids to
+         * Memory-maps [model] (GGUF) and prepares a small context. [cpus] holds optional core ids to
          * pin the [threads] worker threads to. Throws if the model cannot be loaded.
          */
         fun load(model: File, threads: Int, cpus: IntArray? = null, repack: Boolean = true): LlamaContextLm {

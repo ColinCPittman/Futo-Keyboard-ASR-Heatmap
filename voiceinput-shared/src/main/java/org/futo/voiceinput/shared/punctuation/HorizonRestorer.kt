@@ -7,13 +7,13 @@ import java.io.File
 import java.util.Locale
 
 /**
- * Engine "horizon": Horizon-Labs/punctuation-restoration-small (ModernBERT token classifier, multilingual).
+ * Engine "horizon" is Horizon-Labs/punctuation-restoration-small (ModernBERT token classifier, multilingual).
  *
  * Mirrors the model card's `punctuate.py`:
- *  - input ids = [<bos>(2)] + tokens + [<eos>(1)] (the tokenizer's cls/sep), attention_mask all ones;
- *  - text is processed in windows of 400 tokens; after a non-final window the last 50 tokens are re-read in
- *    the next window (only the first `chunk - overlap` labels of each window are used);
- *  - labels `0 . , ? - :` describe the mark that FOLLOWS the word; the label of a word is the arg-max at its last
+ *  - input ids = [<bos>(2)] + tokens + [<eos>(1)] (the tokenizer's cls/sep), attention_mask all ones,
+ *  - text is processed in windows of 400 tokens, and after a non-final window the last 50 tokens are re-read in
+ *    the next window (only the first `chunk - overlap` labels of each window are used),
+ *  - labels `0 . , ? - :` describe the mark that FOLLOWS the word, and the label of a word is the arg-max at its last
  *    token. The model has no casing head, so casing is rule based (see [applyCase]).
  *
  * Label mapping: `.`->".", `,`->",", `?`->"?", `:`->":", `-` (a free-standing dash in the training data)
@@ -68,15 +68,15 @@ internal class HorizonRestorer(
 
     /**
      * Rule based casing (the model only predicts punctuation):
-     *  - mixed-case words (iPhone, NASA, McDonald) are untouched;
-     *  - standalone "i", "i'm", "i've", "i'll", "i'd" become "I...";
-     *  - sentence starts are capitalized by [TextProcessing.assemble] using the NEW sentence boundaries;
+     *  - mixed-case words (iPhone, NASA, McDonald) are untouched,
+     *  - standalone "i", "i'm", "i've", "i'll", "i'd" become "I...",
+     *  - sentence starts are capitalized by [TextProcessing.assemble] using the NEW sentence boundaries,
      *  - a word the ASR capitalized only because it began one of its bogus sentences (it follows an ASR
      *    sentence terminator) or a new utterance (an ASR segment start, "I got | Just start") is lowercased when
-     *    the tokenizer vocabulary says it is a common word: its lowercase form is more frequent than the
-     *    capitalized one (lower BPE id = more frequent: "The", "Just", "Project", "Groceries" -> lowercase;
+     *    the tokenizer vocabulary says it is a common word, meaning its lowercase form is more frequent than the
+     *    capitalized one (lower BPE id means more frequent, so "The", "Just", "Project", "Groceries" -> lowercase,
      *    "Friday", "Sarah", "Google", "Seattle" -> keep). If the word really starts a sentence in the restored
-     *    text, assemble() capitalizes it again;
+     *    text, assemble() capitalizes it again,
      *  - every other word keeps the ASR's casing.
      */
     private fun applyCase(words: List<AsrWord>, i: Int): String {

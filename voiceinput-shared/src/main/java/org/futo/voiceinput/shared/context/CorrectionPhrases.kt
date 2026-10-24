@@ -1,21 +1,21 @@
 package org.futo.voiceinput.shared.context
 
 /**
- * A phrase that marks a self-correction ("the toaster oven, I mean, air fryer"): the words
+ * A phrase that marks a self-correction ("the toaster oven, I mean, air fryer"). The words
  * before it are replaced by the words after it.
  *
- * [needsPause]: only after a pause or punctuation ("I mean" vs "what I mean is").
- * [atSentenceStart]: may also start a new sentence ("... toaster oven? I mean, air fryer?").
- * [numbersOnly]: only between two numbers ("a table for four, make it five"; "make it quick").
+ * [needsPause] means only after a pause or punctuation ("I mean" vs "what I mean is").
+ * [atSentenceStart] means it may also start a new sentence ("... toaster oven? I mean, air fryer?").
+ * [numbersOnly] means only between two numbers ("a table for four, make it five" is one, "make it quick" is not).
  */
 class CorrectionMarker(
     val words: List<String>, val needsPause: Boolean, val atSentenceStart: Boolean, val numbersOnly: Boolean = false,
 )
 
-/** One entry of the "Self-corrections" list: a phrase, switched on or off. */
+/** One entry of the "Self-corrections" list, a phrase switched on or off. */
 typealias CorrectionPhrase = PhraseEntry
 
-/** The self-correction phrases (the "Self-corrections" settings page): the built-in ones and your changes. */
+/** The self-correction phrases (the "Self-corrections" settings page), meaning the built-in ones and your changes. */
 object CorrectionPhrases : PhraseList() {
     override val DEFAULTS: List<String> = listOf(
         "sorry, I mean", "no, I mean", "or I mean", "I mean", "I meant", "I meant to say", "I mean to say",
@@ -62,7 +62,7 @@ object CorrectionPhrases : PhraseList() {
 
     /**
      * Markers for [phrases], longest first. The user's own phrases always need a pause before
-     * them; those of two or more words may also start a sentence.
+     * them, and those of two or more words may also start a sentence.
      */
     fun markers(phrases: List<String>): List<CorrectionMarker> = phrases
         .map { VoiceCommands.phraseWords(it) }

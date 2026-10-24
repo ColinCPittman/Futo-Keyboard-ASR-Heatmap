@@ -31,7 +31,7 @@ def latency_items(testset):
         ("w150_l03", by["l03"]["input"]),
     ]
     out = [(i, t, None) for i, t in items]
-    # per-sentence mode: each finalized sentence with up to two previous sentences as context
+    # per-sentence mode takes each finalized sentence with up to two previous sentences as context
     for src in ("owner", "l01"):
         sents = split_sentences(by[src]["input"])
         for k, s in enumerate(sents):

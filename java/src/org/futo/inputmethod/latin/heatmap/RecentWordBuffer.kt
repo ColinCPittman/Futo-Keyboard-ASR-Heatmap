@@ -4,9 +4,9 @@ package org.futo.inputmethod.latin.heatmap
  * Recently committed words whose tap samples are held back, so that a later correction of one of
  * them relabels its taps with the word the user actually meant, instead of the model learning the
  * misinterpretation. Two kinds of correction are tracked:
- *  - going back to a word and changing it ("dent" -> "sent", see [relabel]);
+ *  - going back to a word and changing it ("dent" -> "sent", see [relabel]).
  *  - deleting the last word(s) with backspace and typing the replacement(s) in their place
- *    (see [onDelete], [onWordTyped]): the deleted words are set aside and paired, in order, with
+ *    (see [onDelete], [onWordTyped]). The deleted words are set aside and paired, in order, with
  *    the words typed next.
  *
  * Words become final (and are returned for learning) once they fall out of the buffer or it is
@@ -19,7 +19,7 @@ class RecentWordBuffer<C>(private val capacity: Int) {
         val context: C,
         /** Letters produced by the original taps. */
         val typedWord: String,
-        /** What is currently in the text field for this word; updated on corrections. */
+        /** What is currently in the text field for this word, and it is updated on corrections. */
         var committedWord: String,
         val taps: List<RecordedTap>
     )
@@ -35,7 +35,7 @@ class RecentWordBuffer<C>(private val capacity: Int) {
     val size: Int get() = entries.size
     val deletedCount: Int get() = deleted.size
 
-    /** Adds a newly committed word; returns the entries pushed out (oldest first), which are now final. */
+    /** Adds a newly committed word and returns the entries pushed out (oldest first), which are now final. */
     fun add(entry: Entry<C>): List<Entry<C>> {
         entries.addLast(entry)
         return evict()
@@ -57,12 +57,12 @@ class RecentWordBuffer<C>(private val capacity: Int) {
             deletedChars = 0
             deletedBudget = 0
         } else if (deletedBudget == 0) {
-            return // backspaces inside a word being typed: not a deletion of committed words
+            return // backspaces inside a word being typed are not a deletion of committed words
         }
         deletedChars++
-        // A word is set aside as soon as the deletion reaches it: its separator (deleted first) and its letters
+        // A word is set aside as soon as the deletion reaches it, and its separator (deleted first) and its letters
         // make up its share of the run. If one backspace deletes a whole word at once, the count runs behind
-        // and fewer words are set aside, which only loses learning: unmatched pairs are rejected later.
+        // and fewer words are set aside, which only loses learning because unmatched pairs are rejected later.
         while (deletedChars > deletedBudget && entries.isNotEmpty()) {
             val word = entries.removeLast()
             deleted.addFirst(word)
@@ -70,7 +70,7 @@ class RecentWordBuffer<C>(private val capacity: Int) {
         }
     }
 
-    /** The user typed a letter: the current run of backspaces (if any) is over. */
+    /** The user typed a letter, so the current run of backspaces (if any) is over. */
     fun onTypingResumed() {
         deletedChars = 0
         deletedBudget = 0
@@ -78,7 +78,7 @@ class RecentWordBuffer<C>(private val capacity: Int) {
 
     /**
      * A newly typed word was committed. If words were deleted before, the oldest deleted word is taken to
-     * be the one this word replaces: it is relabeled and returned to the buffer (ahead of the new word).
+     * be the one this word replaces. It is relabeled and returned to the buffer (ahead of the new word).
      * Returns the entries that became final.
      */
     fun onWordTyped(word: String, entry: Entry<C>?): List<Entry<C>> {
@@ -94,7 +94,7 @@ class RecentWordBuffer<C>(private val capacity: Int) {
 
     /**
      * The user replaced the existing word [from] with [to] (a resumed word was committed). A word that was
-     * just partly deleted and fixed in place is found among the deleted words first; otherwise the most recent
+     * just partly deleted and fixed in place is found among the deleted words first, and otherwise the most recent
      * buffered word whose text is [from] (exact match preferred, else case-insensitive). Returns it, or null.
      */
     fun relabel(from: String, to: String): Entry<C>? {
@@ -115,13 +115,13 @@ class RecentWordBuffer<C>(private val capacity: Int) {
 
     /**
      * An existing word was resumed for editing. Backspacing into a deleted word resumes it (keep the deleted
-     * words); resuming any other word means the user moved elsewhere (drop them).
+     * words), but resuming any other word means the user moved elsewhere (drop them).
      */
     fun onWordResumed(text: String) {
         if (deleted.none { it.committedWord.equals(text, ignoreCase = true) }) forgetDeleted()
     }
 
-    /** The user moved elsewhere: deleted words that were not replaced are dropped. */
+    /** The user moved elsewhere, so deleted words that were not replaced are dropped. */
     fun forgetDeleted() {
         deleted.clear()
         onTypingResumed()
@@ -130,7 +130,7 @@ class RecentWordBuffer<C>(private val capacity: Int) {
     /** Forgets the most recent word without learning from it. */
     fun dropNewest(): Entry<C>? = entries.removeLastOrNull()
 
-    /** Removes and returns all buffered words (oldest first); they are final. Deleted words are dropped. */
+    /** Removes and returns all buffered words (oldest first), and they are final. Deleted words are dropped. */
     fun drain(): List<Entry<C>> {
         val all = entries.toList()
         entries.clear()

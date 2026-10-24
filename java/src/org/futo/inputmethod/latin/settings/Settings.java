@@ -64,7 +64,7 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
     public static final String PREF_AUTO_CORRECTION = "pref_key_auto_correction";
     public static final String PREF_ALWAYS_USE_MIDDLE_SUGGESTION =
             "pref_key_always_use_middle_suggestion";
-    // Pluto: when false, punctuation (! ? , . ...) commits the word exactly as typed; space still corrects.
+    // Pluto: when false, punctuation (! ? , . ...) commits the word exactly as typed, but space still corrects.
     public static final String PREF_CORRECT_BEFORE_PUNCTUATION =
             "pref_key_correct_before_punctuation";
     // PREF_SHOW_SUGGESTIONS_SETTING_OBSOLETE is obsolete. Use PREF_SHOW_SUGGESTIONS instead.

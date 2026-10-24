@@ -28,9 +28,9 @@ private fun usage(): Nothing {
               items may carry "left" (text already in the field before the dictation), "segments" (ASR utterances), "personal" (personal-dictionary words)
               and "learned" (capitalized words learned from typing)
           context-harness typing --lib <libfutoctxlm> --model <gguf> --testset <jsonl> --out <jsonl> [--threads N]
-                              [--margin X] [--opening-margin X] [--tail-min X] [--prompt P]
+                              [--margin X] [--opening-margin X] [--tail-min X] [--prompt P] [--own <file: your pairs, "typed<TAB>intended">] [--early] [--max-fixes N]
               Smart corrections for typing: each sentence of an item is checked in turn, as the
-              keyboard does when it ends (at most one swap per sentence)
+              keyboard does when it ends (at most --max-fixes swaps per sentence, default 2)
           context-harness lexicon <lex> [words...]
           context-harness verify <lex> <metaphone-ref.tsv>   (Kotlin vs Python Double Metaphone; lexicon pairs sound alike)
         """.trimIndent()
@@ -136,7 +136,7 @@ private fun run(args: List<String>) {
             "--fresh" -> fresh = true  // new rescorer per item (as in the app) instead of one for all
             "--options" -> { optionsName = args[++i]; options = SmartCorrectionOptions.parse(optionsName) }
             "--personal" -> personalFile = args[++i]
-            "--gemoji" -> gemojiFile = args[++i]  // java/res/raw/gemoji.json: the emoji names for "emoji"
+            "--gemoji" -> gemojiFile = args[++i]  // java/res/raw/gemoji.json holds the emoji names for "emoji"
             "--only-option" -> onlyOption = args[++i]  // items whose "option" field is this (testset_holdout.jsonl)
             else -> usage()
         }
@@ -218,7 +218,7 @@ private fun run(args: List<String>) {
     lm.close()
 }
 
-/** prior <lib> <model> <frame|frame|...> word... : log P(word | prompt + frame) per frame (experiments). */
+/** prior <lib> <model> <frame|frame|...> word... gives log P(word | prompt + frame) per frame (experiments). */
 private fun prior(args: List<String>) {
     LlamaContextLm.loadLibraryFrom(File(args[0]).absolutePath)
     val lm = LlamaContextLm.load(File(args[1]), 4, null, false)
@@ -243,6 +243,8 @@ private fun typing(args: List<String>) {
     var threads = 8
     var config = org.futo.voiceinput.shared.context.TypingCorrectionConfig()
     var early = false
+    var maxFixes = 2
+    var lexPath: String? = null
     var confusions = org.futo.voiceinput.shared.context.TypingConfusions.builtIn
     var i = 0
     while (i < args.size) {
@@ -257,9 +259,23 @@ private fun typing(args: List<String>) {
             "--tail-min" -> config = config.copy(tailMin = args[++i].toDouble())
             "--min-words" -> config = config.copy(minWords = args[++i].toInt())
             "--early" -> early = true  // also check unfinished sentences word by word, as typed
+            "--max-fixes" -> maxFixes = args[++i].toInt()  // swaps per sentence (the keyboard uses 2)
             "--probe-drop" -> config = config.copy(probeDrop = args[++i].toDouble())
             "--early-words" -> config = config.copy(earlyWords = args[++i].toInt())
+            // missed typos ("ststy" -> "start") take candidates from the lexicon's lowercase words, and a word
+            // it doesn't know stands in for one the keyboard's dictionaries don't know
+            "--missed" -> config = config.copy(missedTypos = true)
+            "--no-real-words" -> config = config.copy(realWords = false)
+            "--lexicon" -> lexPath = args[++i]
+            "--sensitivity" -> config = config.withSensitivity(args[++i].toInt())
+            "--typo-unit" -> config = config.copy(typoUnit = args[++i].toDouble())
+            "--missed-need" -> config = config.copy(missedNeed = args[++i].toDouble())
+            "--missed-margin" -> config = config.copy(missedMargin = args[++i].toDouble())
             "--confusions" -> confusions = org.futo.voiceinput.shared.context.TypingConfusions.parse(File(args[++i]).readLines().asSequence())
+            // your own pairs, as the settings page stores them ("typed<TAB>intended intended")
+            "--own" -> confusions = org.futo.voiceinput.shared.context.TypingPairEdits.merge(
+                confusions, org.futo.voiceinput.shared.context.TypingPairEdits.parse(File(args[++i]).readText())
+            )
             "--prompt" -> config = config.copy(prompt = args[++i].replace("\\n", "\n"))
             else -> usage()
         }
@@ -268,7 +284,8 @@ private fun typing(args: List<String>) {
     if (lib == null || model == null || testset == null || out == null) usage()
     LlamaContextLm.loadLibraryFrom(File(lib).absolutePath)
     val lm = LlamaContextLm.load(File(model), threads, null, false)
-    val corrector = org.futo.voiceinput.shared.context.TypingCorrector(lm, confusions, config)
+    val lexicon = lexPath?.let { org.futo.voiceinput.shared.context.SoundAlikeLexicon.open(File(it)) }
+    val corrector = org.futo.voiceinput.shared.context.TypingCorrector(lm, confusions, config, lexicon)
     val items = File(testset).readLines().filter { it.isNotBlank() }.map { Json.parseToJsonElement(it).jsonObject }
     var totalMs = 0.0
     File(out).bufferedWriter().use { w ->
@@ -281,25 +298,38 @@ private fun typing(args: List<String>) {
             val nSentences = org.futo.voiceinput.shared.context.TypingCorrector.sentences(input).size
             val wordEnd = Regex("[A-Za-z']+(?=[\\s,;:]|$)")
             for (k in 0 until nSentences) {
-                // a swap never adds or removes a sentence end, but it moves the offsets after it
-                var sent = org.futo.voiceinput.shared.context.TypingCorrector.sentences(text)[k]
-                var fixed = false
+                // as the keyboard does (up to maxFixes swaps per sentence, and a fixed word is not changed again)
+                val fixedAt = HashSet<Int>()
+                var fixes = 0
+                fun apply(f: org.futo.voiceinput.shared.context.TypingCorrector.Fix) {
+                    val delta = f.replacement.length - f.original.length
+                    val moved = fixedAt.map { if (it > f.start) it + delta else it }
+                    fixedAt.clear(); fixedAt.addAll(moved); fixedAt.add(f.start)
+                    text = text.substring(0, f.start) + f.replacement + text.substring(f.end)
+                    fixes++
+                }
                 if (early) {
                     // after each word typed (a space or comma after it), as the keyboard does
-                    for (m in wordEnd.findAll(text.substring(sent.first, sent.last + 1)).toList().dropLast(1)) {
-                        val res = corrector.check(text, sent.first, sent.first + m.range.last + 1, finished = false)
+                    var w = 0
+                    while (fixes < maxFixes) {
+                        // a swap never adds or removes a sentence end, but it moves the offsets after it
+                        val sent = org.futo.voiceinput.shared.context.TypingCorrector.sentences(text)[k]
+                        val ends = wordEnd.findAll(text.substring(sent.first, sent.last + 1)).toList().dropLast(1)
+                        if (w >= ends.size) break
+                        val res = corrector.check(text, sent.first, sent.first + ends[w].range.last + 1, finished = false, skip = { it in fixedAt })
                         trace.addAll(res.trace.map { t -> "early $t" })
                         ms.addAll(res.timings)
-                        res.fix?.let { f -> text = text.substring(0, f.start) + f.replacement + text.substring(f.end); fixed = true }
-                        if (fixed) break
+                        val f = res.fix
+                        if (f != null) apply(f) else w++
                     }
-                    sent = org.futo.voiceinput.shared.context.TypingCorrector.sentences(text)[k]
                 }
-                if (fixed) continue
-                val res = corrector.check(text, sent.first, sent.last + 1)
-                trace.addAll(res.trace)
-                ms.addAll(res.timings)
-                res.fix?.let { f -> text = text.substring(0, f.start) + f.replacement + text.substring(f.end) }
+                while (fixes < maxFixes) {
+                    val sent = org.futo.voiceinput.shared.context.TypingCorrector.sentences(text)[k]
+                    val res = corrector.check(text, sent.first, sent.last + 1, skip = { it in fixedAt }, unknown = { true })
+                    trace.addAll(res.trace)
+                    ms.addAll(res.timings)
+                    apply(res.fix ?: break)
+                }
             }
             val secs = (System.nanoTime() - t0) / 1e9
             totalMs += secs * 1000

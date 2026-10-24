@@ -1,14 +1,14 @@
 package org.futo.voiceinput.shared.context
 
 /**
- * Spoken numbers -> digits for the "Numbers, times and amounts" option. Pure rules, no LM:
+ * Spoken numbers -> digits for the "Numbers, times and amounts" option. Pure rules, no LM.
  * [candidates] finds spans of number words in a transcript and proposes written forms
  * ("twenty five dollars" -> "$25", "three thirty pm" -> "3:30 PM", "fifty percent" -> "50%",
- * "nineteen ninety five" -> "1995", "twenty first" -> "21st"); the context stage's LM then
- * judges whether a converted form fits. [forms] is the guard's check: an edit is only allowed
+ * "nineteen ninety five" -> "1995", "twenty first" -> "21st"). The context stage's LM then
+ * judges whether a converted form fits. [forms] is the guard's check, and an edit is only allowed
  * if its replacement is one of the forms these rules produce for exactly the replaced words.
  *
- * Conservative by construction: single number words below ten without a unit ("one of
+ * Conservative by construction, so single number words below ten without a unit ("one of
  * them", "two or three") are never converted, a run of number words that is not one
  * grammatical number ("ten four", "twenty four seven") is left alone, and a run followed by
  * "eighties", "hundreds", ... ("nineteen eighties") or capitalized mid-sentence ("Ocean's
@@ -116,7 +116,7 @@ object NumberWords {
         return null
     }
 
-    /** Minutes / second year half: 10..59 / 10..99, or "oh five" -> 5. */
+    /** Minutes / second year half (10..59 / 10..99), or "oh five" -> 5. */
     private fun ohOrTwoDigit(ws: List<String>): Int? {
         if (ws.size == 2 && ws[0] == "oh" && ws[1] in UNITS && ws[1] != "zero") return UNITS.getValue(ws[1])
         return twoDigit(ws)
@@ -137,29 +137,29 @@ object NumberWords {
         }
     }
 
-    /** Written forms of a run of number words alone (no unit), best first; empty if none. */
+    /** Written forms of a run of number words alone (no unit), best first (empty if none). */
     private fun bareForms(ws: List<String>): List<String> {
         val out = LinkedHashSet<String>()
-        // ordinal: cardinal words + an ordinal word ("twenty first", "hundredth")
+        // ordinal is cardinal words + an ordinal word ("twenty first", "hundredth")
         val lastOrd = ORDINALS[ws.last()]
         if (lastOrd != null) {
             val head = ws.dropLast(1)
             val v = if (head.isEmpty()) lastOrd.toLong() else {
                 val c = cardinal(head)
-                // "twenty first": tens + unit ordinal; "one hundred and fifth": hundred(s) + ordinal
+                // "twenty first" is tens + unit ordinal, and "one hundred and fifth" is hundred(s) + ordinal
                 if (c != null && (c % 10 == 0L) && (lastOrd < 10 || c % 100 == 0L)) c + lastOrd else null
             }
             if (v != null && v >= 10) out.add(grouped(v) + ordinalSuffix(v))
             return out.toList()
         }
         if (ws.any { it in ORDINALS }) return emptyList()
-        // time: H MM ("three thirty", "eleven forty five", "three oh five")
+        // time as H MM ("three thirty", "eleven forty five", "three oh five")
         if (ws.size in 2..3) {
             val h = hour(ws[0])
             val m = ohOrTwoDigit(ws.drop(1))
             if (h != null && m != null && m in 1..59) out.add("$h:%02d".format(m))
         }
-        // year: "nineteen ninety five", "twenty twenty six", "twenty oh five", "nineteen hundred"
+        // year, as in "nineteen ninety five", "twenty twenty six", "twenty oh five", "nineteen hundred"
         if (ws.size in 2..4) {
             for (split in 1..2) {
                 if (split >= ws.size) continue
@@ -193,7 +193,7 @@ object NumberWords {
     )
 
     /**
-     * Written forms of exactly these (lowercase, hyphen-split) words, best first: a number run
+     * Written forms of exactly these (lowercase, hyphen-split) words, best first, made of a number run
      * plus an optional unit ("dollars", "percent", "pm", "dollars and fifty cents").
      */
     fun formsOfWords(ws0: List<String>): List<String> {
@@ -206,7 +206,7 @@ object NumberWords {
         val run = ws.take(n)
         val unit = ws.drop(n)
         val out = LinkedHashSet<String>()
-        // decimals: "two point five" -> 2.5
+        // decimals, as in "two point five" -> 2.5
         val pointAt = run.indexOf("point")
         val number: String? = if (pointAt >= 0) {
             val whole = cardinal(run.take(pointAt))
@@ -251,15 +251,44 @@ object NumberWords {
         return out.toList()
     }
 
-    /** The guard's check: written forms of the words in [src] (any case/punctuation between words). */
+    /** The guard's check, giving written forms of the words in [src] (any case/punctuation between words). */
     fun forms(src: String): List<String> {
+        digitAmountForm(src)?.let { return listOf(it) }
         val words = TranscriptGuard.tokenize(src).words.map { TranscriptGuard.normWord(it) }
         return formsOfWords(words)
     }
 
+    /** A form is an amount of money or a percentage ("$25", "€3.50", "50%"). */
+    fun isAmount(form: String): Boolean = form.startsWith("$") || form.startsWith("€") || form.endsWith("%")
+
+    /** Digits the voice model wrote, then the unit said as a word, as in "800 dollars", "1,200 euros", "30 percent". */
+    private val DIGIT_AMOUNT = Regex(
+        "(?<![\\p{L}\\p{N}$€.,])(\\d{1,3}(?:,\\d{3})+|\\d+)(\\.\\d+)?[ \\t]+(dollars?|euros?|percent|per cent)(?![\\p{L}\\p{N}'’-])",
+        RegexOption.IGNORE_CASE,
+    )
+
+    /** "800 dollars" -> "$800", "3.50 euros" -> "€3.50", "30 percent" -> "30%" (exactly [src]), or null. */
+    fun digitAmountForm(src: String): String? = DIGIT_AMOUNT.matchEntire(src)?.let { formOf(it) }
+
+    private fun formOf(m: MatchResult): String? {
+        val number = m.groupValues[1] + m.groupValues[2]
+        val unit = m.groupValues[3].lowercase()
+        return when {
+            unit.startsWith("per") -> "$number%"
+            // "1 dollar", but not "5 dollar bill" or "1 dollars"
+            unit.endsWith("s") == (number == "1") -> null
+            unit.startsWith("dollar") -> "$$number"
+            else -> "€$number"
+        }
+    }
+
+    /** Spans (start, end, written form) of digit amounts in [text] ("800 dollars"). */
+    fun digitAmounts(text: String): List<Triple<Int, Int, String>> =
+        DIGIT_AMOUNT.findAll(text).mapNotNull { m -> formOf(m)?.let { Triple(m.range.first, m.range.last + 1, it) } }.toList()
+
     /**
      * Conversion candidates in a tokenized transcript. [gaps] are the tokenizer's gaps
-     * (gaps[k] precedes words[k]); words in a run must be separated by plain spaces, except
+     * (gaps[k] precedes words[k]), and words in a run must be separated by plain spaces, except
      * "p.m."/"a.m.". [sentenceStart] tells whether word k starts a sentence (its capital
      * letter is then not a sign of a name).
      */
@@ -304,7 +333,7 @@ object NumberWords {
                 w(e) in setOf("a", "p") && e + 1 < words.size && (dotGap(e + 1) || spaceBefore(e + 1)) && lw[e + 1] == "m" -> units.add(e + 2)
             }
             units.add(e)
-            // a time without am/pm only after "at", "by", "until", ...: "the oven to three fifty" is 350 degrees
+            // a time without am/pm only after "at", "by", "until", ... (so "the oven to three fifty" is 350 degrees)
             val timeContext = k > 0 && lw[k - 1] in TIME_PREPOSITIONS
             for (end in units.distinct()) {
                 val forms = formsOfWords(words.subList(k, end).map { TranscriptGuard.normWord(it) })

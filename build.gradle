@@ -58,7 +58,7 @@ def getBranch = { ->
 // - dropped: the translation is removed, so every locale shows the English value (the app names,
 //   and strings whose English text now says something different).
 // - rebranded: "FUTO" in the translation is replaced with "Pluto".
-// - rebrandedFirst: only the first "FUTO" is replaced; later ones mean FUTO, the original developer
+// - rebrandedFirst: only the first "FUTO" is replaced, and later ones mean FUTO, the original developer
 //   (payment text).
 final def plutoDroppedTranslations = [
         'english_ime_name', 'spell_checker_service_name', 'english_ime_settings',
@@ -112,7 +112,7 @@ final def translationsWithoutEngValues = { final String path ->
                     var content = matcher.group(2)
 
                     if (plutoDroppedTranslations.contains(stringName)) {
-                        return null // Removes the line: the English value is used
+                        return null // Removes the line, so the English value is used
                     }
 
                     content = content

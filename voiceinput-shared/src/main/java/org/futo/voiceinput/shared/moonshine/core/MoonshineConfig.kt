@@ -29,7 +29,7 @@ data class MoonshineStreamingConfig(
 ) {
     companion object {
         /**
-         * Same lenient key lookup as the C++ `parse_config_json`: missing keys
+         * Same lenient key lookup as the C++ `parse_config_json`, where missing keys
          * read as 0, `max_seq_len` defaults to 448.
          */
         fun parse(json: String): MoonshineStreamingConfig {

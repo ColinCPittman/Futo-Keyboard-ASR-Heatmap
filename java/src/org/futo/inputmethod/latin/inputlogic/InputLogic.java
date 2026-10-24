@@ -1080,7 +1080,7 @@ public final class InputLogic {
 
         if (shouldAttachSymbolToWord(codePoint, inputTransaction.mSettingsValues)) {
             // Pluto: with "Correct words before punctuation" off, a symbol typed in a word becomes
-            // part of it ("blahblahflarg!", "Tr0ub4dor&x"): nothing is committed or learned until
+            // part of it ("blahblahflarg!", "Tr0ub4dor&x") and nothing is committed or learned until
             // space, and the whole sequence reaches the password-like word check.
             mWordComposer.applyProcessedEvent(event);
             setComposingTextInternal(getTextWithUnderline(mWordComposer.getTypedWord()), 1);
@@ -1106,7 +1106,7 @@ public final class InputLogic {
 
     /**
      * Whether [codePoint] is a printable symbol to append to the word being typed instead of
-     * ending it: only with "Correct words before punctuation" off, while typing a word at its end.
+     * ending it (only with "Correct words before punctuation" off, while typing a word at its end).
      * Spaces, Enter, emoji and the like still end the word.
      */
     private boolean shouldAttachSymbolToWord(final int codePoint, final SettingsValues settingsValues) {
@@ -2543,6 +2543,16 @@ public final class InputLogic {
     @Nonnull
     private Locale getDictionaryFacilitatorLocale() {
         return mDictionaryFacilitator != null ? mDictionaryFacilitator.getPrimaryLocale() : Locale.ROOT;
+    }
+
+    /**
+     * Whether any of the keyboard's dictionaries (main, your words, contacts, learned) knows
+     * {@code word} as typed or in lowercase (Smart corrections for typing, for missed typos).
+     */
+    public boolean isKnownWord(final String word) {
+        if (mDictionaryFacilitator == null) return true;
+        return mDictionaryFacilitator.isValidSpellingWord(word)
+                || mDictionaryFacilitator.isValidSpellingWord(word.toLowerCase(getDictionaryFacilitatorLocale()));
     }
 
     /**

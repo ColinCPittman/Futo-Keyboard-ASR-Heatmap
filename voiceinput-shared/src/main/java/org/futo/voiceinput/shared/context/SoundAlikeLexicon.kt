@@ -8,27 +8,27 @@ import java.nio.ByteOrder
 import java.nio.channels.FileChannel
 
 /**
- * Sound-alike candidates for the context stage: for a word, up to 6 common words with the
+ * Sound-alike candidates for the context stage. For a word, up to 6 common words with the
  * same number of phonemes and at most one phoneme different (CMUdict), best first. The
  * table is precomputed by tools/context-bench/build_lexicon.py (it reproduces rescore.py's
  * Lexicon.candidates() exactly) and memory-mapped here, so loading costs nothing and only
  * the pages that lookups touch are read.
  *
- * Format version 2 ("FCXLEX02") adds optional tables after the sound-alike words:
- *  * word boundaries ([boundaryCandidates]: "into" -> "in to", "in two"; "every day" -> "everyday"),
- *  * case data ([capitalized]: "jordan" -> "Jordan"; [isLowercaseWord]: "toaster").
+ * Format version 2 ("FCXLEX02") adds these optional tables after the sound-alike words.
+ *  * word boundaries ([boundaryCandidates] finds "into" -> "in to", "in two" and "every day" -> "everyday"),
+ *  * case data ([capitalized] finds "jordan" -> "Jordan", and [isLowercaseWord] finds "toaster").
  * A version 1 file ("FCXLEX01", packages made before these options) has only the sound-alike
- * words; the other lookups then find nothing ([hasBoundaries] / [hasCaseData] are false).
+ * words, and the other lookups then find nothing ([hasBoundaries] / [hasCaseData] are false).
  *
  * Table layout (little-endian):
  *   u32 nVocab, u32 nKeys, u32 nCands, u32 vocabBytes, u32 keyBytes,
  *   u32 vocabOff[nVocab + 1], vocab UTF-8, u32 keyOff[nKeys + 1], key UTF-8 (sorted by bytes),
  *   u32 candOff[nKeys + 1], u16 cand[nCands] (vocab indices)
- * Version 1: "FCXLEX01" + one table. Version 2: "FCXLEX02", u32 nSections,
+ * Version 1 is "FCXLEX01" + one table. Version 2 is "FCXLEX02", u32 nSections,
  *   nSections x (4-byte tag, u32 offset, u32 length), sections (tables) SNDL, BNDR, CAPS, LOWR.
  */
 class SoundAlikeLexicon private constructor(buf: ByteBuffer) {
-    /** One memory-mapped table: sorted keys with candidate lists. */
+    /** One memory-mapped table of sorted keys with candidate lists. */
     private class Table(private val buf: ByteBuffer) {
         val vocabSize: Int
         val size: Int
@@ -168,7 +168,7 @@ class SoundAlikeLexicon private constructor(buf: ByteBuffer) {
     val hasCaseData: Boolean get() = caps != null || lower != null
 
     /**
-     * Candidates for [word] (any case), lowercase, best first; empty for function words, words
+     * Candidates for [word] (any case), lowercase, best first, and empty for function words, words
      * with digits and words without sound-alikes (same rules as rescore.py's Lexicon).
      */
     fun candidates(word: String): List<String> {
@@ -178,8 +178,8 @@ class SoundAlikeLexicon private constructor(buf: ByteBuffer) {
     }
 
     /**
-     * Word-boundary alternatives of [phrase] (one word, or two words separated by one space; any
-     * case), lowercase, best first: "into" -> ["in to", "in two", ...], "every day" -> ["everyday"].
+     * Word-boundary alternatives of [phrase] (one word, or two words separated by one space, in any
+     * case), lowercase, best first, for example "into" -> ["in to", "in two", ...] and "every day" -> ["everyday"].
      * Empty without boundary data.
      */
     fun boundaryCandidates(phrase: String): List<String> {
@@ -192,8 +192,17 @@ class SoundAlikeLexicon private constructor(buf: ByteBuffer) {
     /** The usual capitalized form of [word] if it is mostly written capitalized ("jordan" -> "Jordan"), else null. */
     fun capitalized(word: String): String? = caps?.candidates(TranscriptGuard.normWord(word))?.firstOrNull()
 
-    /** Whether [word] is mostly written in lowercase ("toaster"; not "jordan", "mark" or "may"). */
+    /** Whether [word] is mostly written in lowercase ("toaster", and not "jordan", "mark" or "may"). */
     fun isLowercaseWord(word: String): Boolean = (lower?.find(TranscriptGuard.normWord(word)) ?: -1) >= 0
+
+    /** Every mostly-lowercase word, in byte order, which are the candidates for a misspelled word (loaded on first use). */
+    val lowercaseWords: List<String> by lazy { lower?.let { t -> List(t.size) { t.keyAt(it) } } ?: emptyList() }
+
+    /** Whether [word] is a word the lexicon knows in any case. */
+    fun knows(word: String): Boolean {
+        val w = TranscriptGuard.normWord(word)
+        return isLowercaseWord(w) || capitalized(w) != null || words.find(w) >= 0
+    }
 
     /** The lookup word with index [i] (for tests and tools). */
     fun keyAt(i: Int): String = words.keyAt(i)

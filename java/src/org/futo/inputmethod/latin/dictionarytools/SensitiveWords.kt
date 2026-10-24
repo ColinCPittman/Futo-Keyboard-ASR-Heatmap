@@ -6,28 +6,28 @@ package org.futo.inputmethod.latin.dictionarytools
  * personal dictionary).
  *
  * Pure Kotlin, no Android dependencies (unit-tested in tests/unit). The detector errs on the side
- * of flagging: a false positive only means the word is not learned automatically (the user can tap
+ * of flagging, since a false positive only means the word is not learned automatically (the user can tap
  * "Remember anyway"), while a false negative could put a password into the suggestion strip.
  *
  * A token is flagged when, after trimming surrounding punctuation and a leading '@' or '#':
  *  1. it starts with a well-known secret/key prefix (sk-, sk_live_, ghp_, gho_, github_pat_,
  *     glpat-, AKIA/ASIA access key ids, xoxb-/xoxp-, AIza, ya29., hf_, npm_, SG., shpat_, eyJ (JWT),
- *     ...) and is long enough to be a real key;
- *  2. it is an e-mail address (anything@domain.tld);
+ *     ...) and is long enough to be a real key,
+ *  2. it is an e-mail address (anything@domain.tld),
  *  3. it contains a run of 8 or more digits, or 10 or more digits in total (card, phone and
- *     account numbers, even when grouped with dashes);
- *  4. it is 16 or more hex characters (hashes, tokens);
+ *     account numbers, even when grouped with dashes),
+ *  4. it is 16 or more hex characters (hashes, tokens),
  *  5. it mixes letters and digits in one chunk of 5 or more characters (Tr0ub4dor, a8f2k9,
  *     hunter2, password123, iPhone15) -- except ordinals (1st, 22nd), decades (1990s, 80s) and
  *     numbers with a unit (10am, 1080p, 64GB, 5km). Chunks of 4 or fewer characters (MP3, PS5,
  *     4K, B2B, H2O, x86, gr8) are allowed. Note "iPhone15"/"Windows11"-style names are flagged on
- *     purpose: word + trailing digits is the most common password shape;
+ *     purpose, since word + trailing digits is the most common password shape,
  *  6. it contains a symbol inside the word other than the ones normal words use: apostrophes
  *     (don't, O'Neil), hyphens (well-known, COVID-19, 21-year-old), dots in abbreviations, numbers
  *     and domains (e.g., U.S., 3.14, google.com), slashes between words or small numbers (and/or,
  *     24/7), '&' in short abbreviations (AT&T, R&D), ':' in times (10:30) and ',' in numbers
- *     (1,000). Anything else inside a word (P@ssw0rd, Pa$$word, user:pass, my_secret) is flagged;
- *  7. it looks random: 10+ Latin letters without a vowel, or 12+ letters whose case flips
+ *     (1,000). Anything else inside a word (P@ssw0rd, Pa$$word, user:pass, my_secret) is flagged,
+ *  7. it looks random, meaning 10+ Latin letters without a vowel, or 12+ letters whose case flips
  *     unusually often (aBcDeFgHiJkL), or a 20+ character base64-like string with mixed case and
  *     '+', '/' or '='.
  * Tokens shorter than 4 characters are never flagged. Non-Latin scripts are only checked by the
@@ -163,7 +163,7 @@ object SensitiveWords {
             if (chunk.length >= 5) return true
             shortMixed++
         }
-        // "a8-f2-k9": several short mixed chunks together are just as random.
+        // "a8-f2-k9" has several short mixed chunks together, and that is just as random.
         return shortMixed >= 2
     }
 

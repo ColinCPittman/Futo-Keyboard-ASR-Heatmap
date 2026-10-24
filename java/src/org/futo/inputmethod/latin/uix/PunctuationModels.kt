@@ -22,7 +22,7 @@ import java.io.File
 import java.util.Locale
 
 /**
- * Second pass for voice input: restores punctuation, capitalization and sentence boundaries of
+ * Second pass for voice input that restores punctuation, capitalization and sentence boundaries of
  * the finished transcript with an imported `punctuation` model package (see PunctuationRestorers).
  *
  * The model is loaded lazily (and preloaded when voice input opens, see [preload]), kept while

@@ -68,7 +68,7 @@ class SileroVad(file: File) : SpeechProbabilityModel {
 }
 
 /**
- * Fallback when a model package has no Silero VAD: a simple adaptive energy
+ * Fallback when a model package has no Silero VAD. It is a simple adaptive energy
  * detector. Much cruder than Silero, but enough to split long dictation at
  * pauses.
  */
@@ -83,7 +83,7 @@ class EnergySpeechProbability : SpeechProbabilityModel {
         var sum = 0.0
         for (s in chunk) sum += (s * s).toDouble()
         val rms = sqrt(sum / chunk.size).toFloat()
-        // Track the noise floor: fall quickly, rise slowly.
+        // Track the noise floor (fall quickly, rise slowly).
         noiseFloor = if (rms < noiseFloor) rms.coerceAtLeast(0.0005f) else noiseFloor * 0.995f + rms * 0.005f
         val ratio = rms / noiseFloor
         return ((ratio - 2.0f) / 4.0f).coerceIn(0.0f, 1.0f)
@@ -117,7 +117,7 @@ class VoiceActivitySegment internal constructor(val index: Int) {
 
 /**
  * Splits a 16 kHz stream into speech segments (port of
- * core/voice-activity-detector.cpp): per-hop speech probabilities are averaged
+ * core/voice-activity-detector.cpp), where per-hop speech probabilities are averaged
  * over a sliding window and thresholded, and a segment starts with some
  * look-behind audio.
  *
@@ -130,11 +130,11 @@ class VoiceActivitySegment internal constructor(val index: Int) {
  *
  * With [splitAtPause], a segment past 2/3 of the limit is instead cut at the
  * first short energy dip that is deep enough relative to the segment's mean
- * level (usually a gap between words, sometimes a stop consonant); the
+ * level (usually a gap between words, sometimes a stop consonant), and the
  * required depth relaxes towards the hard limit, where the segment is cut
  * regardless. The next segment is marked [VoiceActivitySegment.continuesPrevious]
  * and starts [splitOverlapSamples] before the cut, so the word at the cut is
- * heard whole at least once; the text join (MoonshineText.joinLines) then
+ * heard whole at least once, and the text join (MoonshineText.joinLines) then
  * merges the words both segments decoded from the overlap. Segments shorter
  * than 2/3 of the limit behave exactly like the reference.
  */
@@ -151,8 +151,8 @@ class VoiceActivityDetector(
     private val windowSize = kotlin.math.ceil(windowDurationSec * 16000f / hopSize).toInt()
     private val probabilityWindow = FloatArray(windowSize)
     private var probabilityWindowIndex = 0
-    // Recent audio: the look-behind for new segments, and the overlap a
-    // continuation segment re-reads, which may be longer.
+    // Recent audio (the look-behind for new segments, and the overlap a
+    // continuation segment re-reads, which may be longer).
     private val history = FloatArray(maxOf(lookBehindSamples, splitOverlapSamples + hopSize))
     private val remainder = FloatList(hopSize * 2)
     private val hop = FloatArray(hopSize)
@@ -160,7 +160,7 @@ class VoiceActivityDetector(
     private var previousIsVoice = false
     private var samplesProcessed = 0L
 
-    // Split-at-pause state: mean power of the open segment, and where the
+    // Split-at-pause state is the mean power of the open segment, and where the
     // last forced split happened (absolute sample index, -1 if none).
     private var segmentPowerSum = 0.0
     private var segmentPowerHops = 0
@@ -189,7 +189,7 @@ class VoiceActivityDetector(
 
     /**
      * Ends the stream, closing an open segment. An open segment also gets the last partial hop and
-     * [paddingSamples] of silence: the recognizer needs some audio after the last word to decode
+     * [paddingSamples] of silence, because the recognizer needs some audio after the last word to decode
      * it, which a stop pressed right after speaking leaves out.
      */
     fun stop(paddingSamples: Int = 0) {
@@ -267,7 +267,7 @@ class VoiceActivityDetector(
             lastSplitSample = samplesProcessed - hopSize + splitOffset
             onVoiceEnd()
             current.endTime = lastSplitSample / 16000f
-            // Speech goes on: the rest of this hop starts the next segment.
+            // Speech goes on, so the rest of this hop starts the next segment.
             startSegment(continuesPrevious = true)
         } else if (isVoice && !previousIsVoice) {
             startSegment(continuesPrevious = false)
@@ -288,7 +288,7 @@ class VoiceActivityDetector(
             // Re-read the end of the segment that was just cut.
             lookBehindSize = minOf(history.size.toLong(), samplesProcessed - lastSplitSample + splitOverlapSamples)
         } else if (lastSplitSample >= 0) {
-            // Speech stopped right at a forced cut: don't re-read the cut segment.
+            // Speech stopped right at a forced cut, so don't re-read the cut segment.
             lookBehindSize = minOf(lookBehindSize, samplesProcessed - lastSplitSample)
             lastSplitSample = -1L
         }
@@ -308,7 +308,7 @@ class VoiceActivityDetector(
 
     /**
      * Returns where in [chunk] to cut a segment that is already [size] samples
-     * long, or -1 to keep going: the middle of the first [SPLIT_FRAME] that is
+     * long, or -1 to keep going. It is the middle of the first [SPLIT_FRAME] that is
      * at least the required depth below the segment's mean power. The depth
      * goes from [SPLIT_DEPTH_START_DB] at [softLimit] to [SPLIT_DEPTH_END_DB]
      * at the hard limit, where the segment is cut at the hop's quietest frame

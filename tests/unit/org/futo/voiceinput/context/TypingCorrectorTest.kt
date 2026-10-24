@@ -7,6 +7,8 @@ import org.futo.voiceinput.shared.context.ContextLm
 import org.futo.voiceinput.shared.context.TypingConfusions
 import org.futo.voiceinput.shared.context.TypingCorrectionConfig
 import org.futo.voiceinput.shared.context.TypingCorrector
+import org.futo.voiceinput.shared.context.OwnTypingPair
+import org.futo.voiceinput.shared.context.TypingPairEdits
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -14,7 +16,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Word-level fake LM: log P(word) depends on the previous word only (bigram table, else -3). */
+/** Word-level fake LM where log P(word) depends on the previous word only (bigram table, else -3). */
 private class BigramLm(private val bigrams: Map<Pair<String, String>, Float>) : ContextLm {
     private val ids = LinkedHashMap<String, Int>()
     private val pieces = ArrayList<String>()
@@ -56,7 +58,7 @@ private class BigramLm(private val bigrams: Map<Pair<String, String>, Float>) : 
 class TypingCorrectorTest {
     private val confusions = TypingConfusions.parse(sequenceOf("an and any", "or of for", "is it"))
 
-    // "salt and pepper" is likely, "an pepper" is not; "an apple" is likely, "and apple" is not
+    // "salt and pepper" is likely, "an pepper" is not, and "an apple" is likely, "and apple" is not
     private val lm = BigramLm(
         mapOf(
             ("salt" to "and") to -1f, ("and" to "pepper") to -1f, ("salt" to "any") to -6f, ("any" to "pepper") to -8f, ("salt" to "an") to -4f, ("an" to "pepper") to -12f,
@@ -66,7 +68,7 @@ class TypingCorrectorTest {
     )
 
     private fun corrector(caution: (String, String, String, String) -> Double = { _, _, _, _ -> 0.0 }) =
-        TypingCorrector(lm, confusions, TypingCorrectionConfig(margin = 5.0, openingMargin = 4.0), caution)
+        TypingCorrector(lm, confusions, TypingCorrectionConfig(margin = 5.0, openingMargin = 4.0), caution = caution)
 
     @Test
     fun builtInListHasTheCommonSlips() {
@@ -114,11 +116,24 @@ class TypingCorrectorTest {
         val bigrams = mapOf(("taller" to "than") to -3f, ("taller" to "then") to -6.5f, ("than" to "her") to -1f, ("then" to "her") to -3f)
         val conf = TypingConfusions.parse(sequenceOf("then than"))
         val text = "She is taller then her brother."
-        // gain 3.5 + 2: under the plain 6.5 margin, enough after the comparative relief
+        // gain 3.5 + 2, which is under the plain 6.5 margin but enough after the comparative relief
         assertNull(TypingCorrector(BigramLm(bigrams), conf, TypingCorrectionConfig(margin = 6.5, comparativeRelief = 0.0)).check(text).fix)
         assertEquals("than", TypingCorrector(BigramLm(bigrams), conf, TypingCorrectionConfig(margin = 6.5)).check(text).fix?.replacement)
-        // a comma after it: "taller then, ..." is left alone
+        // with a comma after it, "taller then, ..." is left alone
         assertNull(TypingCorrector(BigramLm(bigrams), conf, TypingCorrectionConfig(margin = 6.5)).check("She was taller then, her brother.").fix)
+    }
+
+    @Test
+    fun yourOwnPairsNeedLessEvidence() {
+        val bigrams = mapOf(("wouldn't" to "pout") to -6f, ("wouldn't" to "pour") to -8f, ("pout" to "like") to -2f, ("pour" to "like") to -4f)
+        val text = "I wish you wouldn't pour like that."
+        // gain 2 + 2 = 4, which is under the 6.5 margin as a built-in pair but enough as one of yours
+        val asBuiltIn = TypingConfusions.parse(sequenceOf("pour pout"))
+        assertNull(TypingCorrector(BigramLm(bigrams), asBuiltIn, TypingCorrectionConfig(margin = 6.5)).check(text).fix)
+        val asYours = TypingPairEdits.merge(TypingConfusions(emptyMap()), TypingPairEdits(own = listOf(OwnTypingPair("pour", listOf("pout")))))
+        assertEquals("pout", TypingCorrector(BigramLm(bigrams), asYours, TypingCorrectionConfig(margin = 6.5)).check(text).fix?.replacement)
+        // but the swapped text must still be clearly more likely
+        assertNull(TypingCorrector(BigramLm(bigrams), asYours, TypingCorrectionConfig(margin = 6.5, ownMinNeed = 5.0)).check(text).fix)
     }
 
     @Test
@@ -187,7 +202,7 @@ class TypingFixTest {
     @Test
     fun matchesUnchangedText() {
         assertTrue(fix.matches("some new salt and pepper shakers and more"))
-        // the cursor is right after the fix: the text after it is cut short
+        // the cursor is right after the fix, so the text after it is cut short
         assertTrue(fix.matches("some new salt and pep"))
     }
 
@@ -219,5 +234,42 @@ class TypingFixTest {
         assertEquals(0.0, memory.caution("or", "of", "salt", "pepper"), 0.0)
         // no words are stored, only the swap and a hash of its neighbours
         assertTrue(store.keys.none { "salt" in it || "pepper" in it })
+    }
+
+    @Test
+    fun missedFixesMakeASwapMoreReady() {
+        val store = HashMap<String, Int>()
+        val memory = TypingRevertMemory({ store[it] ?: 0 }, { store.putAll(it) })
+        memory.recordMiss("pour", "pout", "you", "every")
+        assertEquals(-(TypingRevertMemory.MISS_PAIR_STEP + TypingRevertMemory.MISS_CONTEXT_STEP), memory.caution("pour", "pout", "you", "every"), 1e-9)
+        assertEquals(-TypingRevertMemory.MISS_PAIR_STEP, memory.caution("pour", "pout", "can", "me"), 1e-9)
+        // limited
+        repeat(10) { memory.recordMiss("pour", "pout", "you", "every") }
+        assertEquals(-TypingRevertMemory.MAX_READY, memory.caution("pour", "pout", "you", "every"), 1e-9)
+        // an undo cancels one missed fix (and the other way round)
+        val s2 = HashMap<String, Int>()
+        val m2 = TypingRevertMemory({ s2[it] ?: 0 }, { s2.putAll(it) })
+        m2.recordMiss("pour", "pout", "you", "every")
+        m2.recordRevert("pour", "pout", "you", "every")
+        assertEquals(0.0, m2.caution("pour", "pout", "you", "every"), 1e-9)
+        m2.recordRevert("pour", "pout", "you", "every")
+        m2.recordMiss("pour", "pout", "you", "every")
+        assertEquals(0.0, m2.caution("pour", "pout", "you", "every"), 1e-9)
+    }
+
+    @Test
+    fun learningNeverGoesBelowTheFloor() {
+        // "pout" barely more likely (gain 1), so even made as ready as possible, it needs the floor (1.5)
+        val bigrams = mapOf(("you" to "pout") to -5f, ("you" to "pour") to -6f)
+        val conf = TypingConfusions.parse(sequenceOf("pour pout"))
+        val text = "I see you pour every day."
+        val ready = TypingCorrector(BigramLm(bigrams), conf, TypingCorrectionConfig(margin = 6.5)) { _, _, _, _ -> -100.0 }
+        val r = ready.check(text)
+        assertNull(r.fix)
+        assertTrue(r.trace.joinToString(), r.trace.any { "need=1.50" in it })
+        // a clearer case (gain 3) is fixed once it is ready enough, not before
+        val clearer = mapOf(("you" to "pout") to -3f, ("you" to "pour") to -6f)
+        assertNull(TypingCorrector(BigramLm(clearer), conf, TypingCorrectionConfig(margin = 6.5)).check(text).fix)
+        assertEquals("pout", TypingCorrector(BigramLm(clearer), conf, TypingCorrectionConfig(margin = 6.5)) { _, _, _, _ -> -TypingRevertMemory.MAX_READY }.check(text).fix?.replacement)
     }
 }

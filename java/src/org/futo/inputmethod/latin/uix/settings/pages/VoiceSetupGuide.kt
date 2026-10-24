@@ -53,7 +53,7 @@ const val VoiceSetupGuideRoute = "voiceSetupGuide"
 
 fun hasMoonshineModel(context: Context) = VoiceInputEngines.installedMoonshineModels(context).isNotEmpty()
 
-/** Voice Input page, top: shown while no Moonshine voice model is installed. */
+/** Voice Input page (top), shown while no Moonshine voice model is installed. */
 val VoiceSetupGuideEntry = userSettingNavigationItem(
     title = R.string.pluto_voice_setup_title,
     subtitle = R.string.pluto_voice_setup_subtitle,

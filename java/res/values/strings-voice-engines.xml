@@ -18,10 +18,10 @@
     <!-- Smart corrections page (Voice Input → Smart corrections): the switch, then what the context pass may change -->
     <string name="smart_corrections_title">Smart corrections</string>
     <string name="smart_corrections_row_description">Fixes misheard words using the whole sentence.</string>
-    <string name="smart_corrections_row_description_whisper">Little benefit with Whisper, your current voice model; it\'s meant for Moonshine.</string>
+    <string name="smart_corrections_row_description_whisper">Little benefit with Whisper (your current voice model). It\'s meant for Moonshine.</string>
     <string name="smart_corrections_whisper_note">Whisper is your current voice model. It rarely mishears words, so Smart corrections will change little and add a short wait after you stop speaking. Smart corrections are meant for Moonshine.</string>
     <string name="smart_corrections_enable">Use Smart corrections</string>
-    <string name="smart_corrections_intro">Choose what Smart corrections may change:</string>
+    <string name="smart_corrections_intro">Choose what Smart corrections may change.</string>
     <string name="smart_corrections_needs_main_switch">Turn on Smart corrections to use this.</string>
     <string name="smart_corrections_sound_alike">Misheard words</string>
     <string name="smart_corrections_sound_alike_subtitle">Swaps a word for one that sounds the same when the sentence calls for it, like “bulls” → “bowls” or “in to” → “into”.</string>
@@ -29,8 +29,17 @@
     <string name="smart_corrections_names_subtitle">Spells names and words from your personal dictionary the way you do, and fixes stray capital letters.</string>
     <string name="smart_corrections_numbers">Numbers, times and amounts</string>
     <string name="smart_corrections_numbers_subtitle">Writes spoken numbers as digits, like “twenty five dollars” → “$25” or “three thirty pm” → “3:30 PM”.</string>
+    <string name="smart_corrections_sensitivity">Sensitivity</string>
+    <string name="smart_corrections_sensitivity_subtitle">How readily each correction changes what you said.</string>
+    <string name="smart_corrections_sensitivity_intro">Each correction only changes your words when the sentence clearly reads better. Slide left if one changes words it should leave alone, or right if it misses changes you want.</string>
+    <string name="smart_corrections_questions">Question marks</string>
+    <string name="smart_corrections_sensitivity_fewest">Fewest</string>
+    <string name="smart_corrections_sensitivity_fewer">Fewer</string>
+    <string name="smart_corrections_sensitivity_default">Default</string>
+    <string name="smart_corrections_sensitivity_more">More</string>
+    <string name="smart_corrections_sensitivity_most">Most</string>
     <string name="smart_corrections_quotes">Quoted speech</string>
-    <string name="smart_corrections_quotes_subtitle">Adds quotation marks when you repeat what someone said, but only when the sentence makes it clear: “he was like ten feet tall” stays as it is.</string>
+    <string name="smart_corrections_quotes_subtitle">Adds quotation marks when you repeat what someone said, but only when the sentence makes it clear. “He was like ten feet tall” stays as it is.</string>
 
     <!-- Smart corrections → Quoted speech page -->
     <string name="smart_corrections_emoji">Emoji</string>
@@ -45,7 +54,7 @@
     <string name="emoji_names_your_changes">Names you added or switched off</string>
     <string name="emoji_names_no_matches">No emoji has that name. Add it as your own below.</string>
     <string name="emoji_names_gives">“%1$s emoji” gives %2$s</string>
-    <string name="emoji_names_gives_none">“%1$s emoji” gives no emoji: it fits several, or is switched off. Add it as your own name to choose one.</string>
+    <string name="emoji_names_gives_none">“%1$s emoji” gives no emoji (it fits several, or is switched off). Add it as your own name to choose one.</string>
     <string name="emoji_names_say">Say: %1$s</string>
     <string name="emoji_names_names_of">Names for %1$s</string>
     <string name="emoji_names_more">Showing the first %1$d. Type more to narrow it down.</string>
@@ -61,7 +70,7 @@
     <string name="emoji_names_reset">Undo your changes</string>
     <string name="emoji_names_reset_confirm">Remove the names you added and switch every built-in name back on?</string>
     <string name="quote_triggers_header">Phrases that introduce a quote</string>
-    <string name="quote_triggers_explanation">After someone and one of these phrases, like “she said” or “I was like”, the rest of the sentence becomes a quote, but only when it can only be something they said: a question, or a reply that starts with “um”, “oh” or “wow”. “He fired back with a shotgun” stays as it is. Switch a phrase off to stop using it.</string>
+    <string name="quote_triggers_explanation">After someone and one of these phrases, like “she said” or “I was like”, the rest of the sentence becomes a quote, but only when it can only be something they said (a question, or a reply that starts with “um”, “oh” or “wow”). “He fired back with a shotgun” stays as it is. Switch a phrase off to stop using it.</string>
     <string name="quote_triggers_none">You haven\'t added any phrases.</string>
     <string name="quote_triggers_add">Add a phrase</string>
     <string name="quote_triggers_edit">Edit phrase</string>
@@ -70,9 +79,9 @@
     <string name="quote_triggers_reset">Reset to the built-in phrases</string>
     <string name="quote_triggers_reset_confirm">Delete the phrases you added and switch every built-in phrase back on?</string>
     <string name="quote_triggers_builtin">Built-in phrases</string>
-    <string name="quote_triggers_builtin_subtitle">%d built-in phrases. Off: only the ones you add start a quote.</string>
+    <string name="quote_triggers_builtin_subtitle">%d built-in phrases. Turn this off and only the ones you add start a quote.</string>
     <string name="smart_corrections_fillers">Filler words</string>
-    <string name="smart_corrections_fillers_subtitle">Removes “um”, “uh”, a “you know” or “like” between pauses, and words you said twice by accident. Fillers inside a quote are kept.</string>
+    <string name="smart_corrections_fillers_subtitle">Removes “um”, “uh”, a “like” or “basically” between pauses, and words you said twice by accident. Fillers inside a quote are kept.</string>
     <string name="smart_corrections_commands">Voice commands</string>
     <string name="smart_corrections_commands_subtitle">Say “new line”, “comma” or “scratch that” to format as you speak, with a short pause before or after. When the words are part of your sentence, like “a new line formed”, they stay as words.</string>
     <string name="smart_corrections_self_corrections">Self-corrections</string>
@@ -138,7 +147,7 @@
     <string name="correction_phrases_reset">Reset to the built-in phrases</string>
     <string name="correction_phrases_reset_confirm">Delete the phrases you added and switch every built-in phrase back on?</string>
     <string name="correction_phrases_builtin">Built-in phrases</string>
-    <string name="correction_phrases_builtin_subtitle">%d built-in phrases. Off: only the ones you add mark a correction.</string>
+    <string name="correction_phrases_builtin_subtitle">%d built-in phrases. Turn this off and only the ones you add mark a correction.</string>
 
     <!-- Smart corrections → Filler words page -->
     <string name="filler_words_header">Filler words to remove</string>
@@ -151,23 +160,38 @@
     <string name="filler_words_reset">Reset to the built-in filler words</string>
     <string name="filler_words_reset_confirm">Delete the filler words you added and switch every built-in one back on?</string>
     <string name="filler_words_builtin">Built-in filler words</string>
-    <string name="filler_words_builtin_subtitle">%d built-in filler words. Off: only the ones you add are removed.</string>
+    <string name="filler_words_builtin_subtitle">%d built-in filler words. Turn this off and only the ones you add are removed.</string>
     <string name="phrase_list_yours">Yours</string>
     <string name="phrase_list_built_in">Built-in (%d)</string>
-    <string name="phrase_list_built_in_off_note">Off for now: turn on the switch above to use these too.</string>
+    <string name="phrase_list_built_in_off_note">Off for now. Turn on the switch above to use these too.</string>
 
     <!-- Voice Input page: link to advanced options -->
     <string name="voice_input_advanced_title">Advanced options</string>
-    <string name="voice_input_advanced_subtitle">Speed settings for live voice typing</string>
+    <string name="voice_input_advanced_subtitle">Live text, auto-stop and speed settings for live voice typing</string>
 
     <!-- Advanced options page (technical names may appear in parentheses here) -->
+    <string name="voice_input_advanced_section_live">Live voice typing (Moonshine)</string>
+    <string name="voice_input_advanced_section_speed">Speed</string>
+    <string name="voice_input_advanced_needs_moonshine">These settings only apply when a Moonshine model is your English voice input model (Languages &amp; Models).</string>
+    <string name="voice_input_settings_moonshine_live_text">Show words while speaking</string>
+    <string name="voice_input_settings_moonshine_live_text_subtitle">Words appear as you speak. Turn this off and each phrase appears when you pause, which uses less battery but takes a moment longer when you finish.</string>
+    <string name="voice_input_settings_moonshine_refresh">Live text refresh</string>
+    <string name="voice_input_settings_moonshine_refresh_subtitle">How often the words on screen catch up with your speech. Faster feels more live but uses more battery.</string>
+    <string name="voice_input_settings_moonshine_refresh_fast">Fast (every %1$.2g s)</string>
+    <string name="voice_input_settings_moonshine_refresh_normal">Normal (every %1$.1f s, default)</string>
+    <string name="voice_input_settings_moonshine_refresh_slow">Slow (every %1$.0f s)</string>
+    <string name="voice_input_settings_moonshine_auto_stop">Stop after silence</string>
+    <string name="voice_input_settings_moonshine_auto_stop_subtitle">When you stop talking for this long, voice typing finishes and types your words, as if you tapped to finish. When it\'s off, it keeps listening until you tap. Background noise can keep it listening.</string>
+    <string name="voice_input_settings_moonshine_auto_stop_off">Off (tap to finish)</string>
+    <string name="voice_input_settings_moonshine_auto_stop_seconds">%1$.1f s</string>
+    <string name="voice_input_settings_moonshine_auto_stop_default">%1$.1f s (default)</string>
     <string name="voice_input_settings_moonshine_accelerator">Processing mode</string>
-    <string name="voice_input_settings_moonshine_accelerator_subtitle">How live voice typing runs on your phone. Standard is usually fastest; turn on Show timing info to compare. If a mode doesn\'t work on your phone, Standard is used instead.</string>
+    <string name="voice_input_settings_moonshine_accelerator_subtitle">How live voice typing runs on your phone. Standard is usually fastest, and you can turn on Show timing info to compare. If a mode doesn\'t work on your phone, Standard is used instead.</string>
     <string name="voice_input_settings_moonshine_accelerator_cpu">Standard (CPU)</string>
     <string name="voice_input_settings_moonshine_accelerator_xnnpack">Fast CPU (XNNPACK)</string>
     <string name="voice_input_settings_moonshine_accelerator_nnapi">Phone AI chip (NNAPI, experimental)</string>
     <string name="voice_input_settings_moonshine_threads">Processor cores</string>
-    <string name="voice_input_settings_moonshine_threads_subtitle">How many processor cores live voice typing uses. Auto picks your phone\'s fast cores; more isn\'t always faster.</string>
+    <string name="voice_input_settings_moonshine_threads_subtitle">How many processor cores live voice typing uses. Auto picks your phone\'s fast cores (more isn\'t always faster).</string>
     <string name="voice_input_settings_moonshine_threads_auto">Auto (%1$d)</string>
     <string name="voice_input_settings_show_timing">Show timing info</string>
     <string name="voice_input_settings_show_timing_subtitle">After live voice typing, shows how long you spoke and how long it took to process.</string>
@@ -179,7 +203,7 @@
     <string name="voice_models_section_manage">Manage</string>
     <string name="voice_models_whisper_title">Whisper: %1$s</string>
     <string name="voice_models_whisper_subtitle">Types your words after you finish speaking. Works in many languages.</string>
-    <string name="voice_models_moonshine_subtitle">Live: words appear as you speak, with no time limit. English only. %1$s</string>
+    <string name="voice_models_moonshine_subtitle">Live, so words appear as you speak, with no time limit. English only. %1$s</string>
     <string name="voice_models_moonshine_none_installed">For live voice typing in English, import a Moonshine model package (.zip).</string>
     <string name="voice_models_import">Import voice model</string>
     <string name="voice_models_import_subtitle">A Whisper model file (.bin)</string>

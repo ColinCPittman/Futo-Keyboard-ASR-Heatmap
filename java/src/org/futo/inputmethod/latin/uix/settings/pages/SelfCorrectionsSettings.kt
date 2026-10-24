@@ -47,8 +47,8 @@ import org.futo.voiceinput.shared.context.QuoteTriggers
 import org.futo.voiceinput.shared.context.VoiceCommands
 
 /*
- * Smart corrections → Self-corrections, → Filler words and → Quoted speech: each page has its
- * switch, then its phrase list: the built-in phrases and your own, every one with its own switch.
+ * Smart corrections → Self-corrections, → Filler words and → Quoted speech. Each page has its
+ * switch, then its phrase list (the built-in phrases and your own, every one with its own switch).
  */
 
 /** Texts of one editable phrase list page. */
@@ -114,10 +114,10 @@ private fun PhraseDialog(
 }
 
 /**
- * An editable phrase list: the "Built-in" switch, your own phrases (each with its switch; tap one
+ * An editable phrase list with the "Built-in" switch, your own phrases (each with its switch, and tap one
  * to change or delete it), then the built-in phrases, each with its switch. With the built-in
  * phrases off they are still listed, greyed, so you see what turning them on adds. Only your
- * changes are saved ([PhraseList.serialize]); the switch never changes them.
+ * changes are saved ([PhraseList.serialize]), and the switch never changes them.
  */
 @Composable
 private fun EditablePhraseList(
@@ -133,7 +133,7 @@ private fun EditablePhraseList(
     val changes = remember(stored) { list.parse(stored) }
     val own = remember(changes) { list.own(changes) }
     fun save(newChanges: List<PhraseEntry>) = setStored(list.serialize(newChanges))
-    // your own phrases changed; the built-in phrases you switched off stay as they are
+    // your own phrases changed, and the built-in phrases you switched off stay as they are
     fun saveOwn(newOwn: List<PhraseEntry>) = save(newOwn + (changes - own.toSet()))
 
     var editing by remember { mutableStateOf<Int?>(null) }   // index into own, or -1 when adding
@@ -306,7 +306,7 @@ private val FillerWordList = UserSetting(name = R.string.filler_words_header, ap
     )
 }
 
-/** A Smart corrections sub-page: a note when smart corrections are off, the switch, then the list. */
+/** A Smart corrections sub-page with a note when smart corrections are off, the switch, then the list. */
 internal fun phraseListMenu(title: Int, subtitle: Int, navPath: String, setting: SettingsKey<Boolean>, list: UserSetting) =
     UserSettingsMenu(
         title = title,

@@ -5,7 +5,7 @@ import kotlin.math.min
 
 /**
  * Streaming transcription of one recording (port of the stream path of
- * moonshine's `Transcriber`: `transcribe_stream`,
+ * moonshine's `Transcriber`, namely `transcribe_stream`,
  * `update_transcript_from_segments`, `transcribe_segment_with_streaming_model`).
  *
  * How it works:
@@ -21,11 +21,11 @@ import kotlin.math.min
  *   whole line from the start. With speculative decoding the previous
  *   hypothesis is verified in a single batched decoder pass and decoding
  *   continues from the first mismatch, which keeps re-decodes cheap.
- * - When the VAD closes a line (or the stream stops) the line is finalized:
+ * - When the VAD closes a line (or the stream stops) the line is finalized, so
  *   lookahead frames are flushed (`is_final`) and decoded one last time.
  *
- * [addAudio] may be called from a different thread than [update]/[stop];
- * the model itself is only ever used from the thread calling [update]/[stop].
+ * [addAudio] may be called from a different thread than [update]/[stop],
+ * but the model itself is only ever used from the thread calling [update]/[stop].
  */
 class MoonshineStreamingTranscriber(
     private val model: MoonshineStreamingModel,
@@ -157,7 +157,7 @@ class MoonshineStreamingTranscriber(
     }
 
     /**
-     * Ends the stream: processes the remaining audio, closes the open line and
+     * Ends the stream. It processes the remaining audio, closes the open line and
      * finalizes it. Returns the final transcript.
      */
     fun stop(): Transcript {
@@ -189,7 +189,7 @@ class MoonshineStreamingTranscriber(
     private fun updateFromSegments() {
         for (segment in vad.segments) {
             if (!segment.justUpdated) continue
-            // A finished line is final: its audio is released, so decoding it again (stop() right
+            // A finished line is final because its audio is released, so decoding it again (stop() right
             // after the update that finished it, with no new audio) would erase its text.
             if (segment.index < lines.size && lines[segment.index].isComplete) continue
             val text = MoonshineText.fixSplitDecades(transcribeSegment(segment))
@@ -216,7 +216,7 @@ class MoonshineStreamingTranscriber(
         }
 
         if (segmentSamplesProcessed < audioLength) {
-            // Whole 80 ms chunks only; the remainder waits for the next update.
+            // Whole 80 ms chunks only, and the remainder waits for the next update.
             // The published English frontend graphs mishandle chunk lengths
             // that aren't a multiple of 80 samples (see transcriber.cpp).
             val newLength = audioLength - segmentSamplesProcessed
@@ -280,7 +280,7 @@ object MoonshineText {
 
     /**
      * The model sometimes writes a decade as the number and a lone "s", mostly when the speaker
-     * pauses right after it ("in my twenty s, I would"). Joins them again: "twenties", "20s".
+     * pauses right after it ("in my twenty s, I would"). Joins them again into "twenties" or "20s".
      */
     fun fixSplitDecades(line: String): String {
         if (!line.contains(" s") && !line.contains(" S")) return line
@@ -297,9 +297,9 @@ object MoonshineText {
      *
      * A line in [continuesPrevious] picks up mid-speech where the previous one
      * was cut for length. Its audio may start a little before the cut, so words
-     * at the start of the line can repeat the end of the previous one; those
+     * at the start of the line can repeat the end of the previous one, and those
      * are merged (see [mergeOverlap]). The model's sentence end at the cut is
-     * an artifact: the previous line's final period is dropped and the first
+     * an artifact, so the previous line's final period is dropped and the first
      * letter is lowercased as after a comma.
      */
     fun joinLines(lines: List<String>, continuesPrevious: List<Boolean> = emptyList()): String {
@@ -335,7 +335,7 @@ object MoonshineText {
     }
 
     /**
-     * Merges the words [next] repeats from the end of [previous]: finds the
+     * Merges the words [next] repeats from the end of [previous]. It finds the
      * longest run of words (ignoring case and punctuation) that both share
      * near the cut and keeps it once. Words of [previous] after the run were
      * decoded from a word cut off at the end of its audio, and words of [next]

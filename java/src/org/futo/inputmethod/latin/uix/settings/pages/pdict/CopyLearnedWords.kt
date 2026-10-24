@@ -57,7 +57,7 @@ const val HiddenLearnedWordsRoute = "hiddenLearnedWords"
 private fun LearnedWord.key() = locale + "\u0000" + word
 
 /**
- * Personal dictionary → Copy learned words to dictionary: review the words the keyboard learned
+ * Personal dictionary → Copy learned words to dictionary lets you review the words the keyboard learned
  * (that the dictionaries don't know yet) and copy the chosen ones to Android's personal dictionary.
  * Nothing is written until the user taps "Copy N words".
  */
@@ -267,7 +267,7 @@ private fun WordRow(
     }
 }
 
-/** Copy learned words → Hidden words: words the user chose to never offer for copying. */
+/** Copy learned words → Hidden words lists words the user chose to never offer for copying. */
 @Composable
 fun HiddenLearnedWordsScreen(navController: NavHostController) {
     val context = LocalContext.current

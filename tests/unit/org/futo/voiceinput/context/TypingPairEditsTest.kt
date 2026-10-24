@@ -4,6 +4,7 @@ import org.futo.voiceinput.shared.context.OwnTypingPair
 import org.futo.voiceinput.shared.context.TypingConfusions
 import org.futo.voiceinput.shared.context.TypingPairEdits
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -19,6 +20,22 @@ class TypingPairEditsTest {
         assertTrue("that's" in b.candidates("hat's"))
         // real contractions are not slips of each other
         assertTrue(b.candidates("it's").isEmpty())
+    }
+
+    /** "Stop this fix" after an undo, only that pair goes and the typed word keeps its other fixes. */
+    @Test fun withoutPairStopsOneFix() {
+        val e = TypingPairEdits(own = listOf(OwnTypingPair("pour", listOf("pout", "poor")), OwnTypingPair("teh", listOf("the"))))
+        val a = e.withoutPair("Pour", "pout", builtIn)
+        assertEquals(listOf(OwnTypingPair("pour", listOf("poor")), OwnTypingPair("teh", listOf("the"))), a.own)
+        assertTrue(a.offBuiltIn.isEmpty())
+        // your pair with only that word goes, and the built-in one is switched off
+        val b = e.withoutPair("teh", "the", builtIn)
+        assertEquals(listOf(OwnTypingPair("pour", listOf("pout", "poor"))), b.own)
+        assertEquals(listOf("teh" to "the"), b.offBuiltIn)
+        val merged = TypingPairEdits.merge(builtIn, TypingPairEdits().withoutPair("form", "from", builtIn))
+        assertEquals(listOf("for"), merged.candidates("form"))
+        // twice gives no duplicate
+        assertEquals(b.offBuiltIn, b.withoutPair("teh", "the", builtIn).offBuiltIn)
     }
 
     @Test fun searchMergesBuiltInAndOwnPairs() {
@@ -90,6 +107,34 @@ class TypingPairEditsTest {
             never = listOf("teh"),
         )
         assertEquals(e, TypingPairEdits.parse(e.serialize()))
+    }
+
+    @Test fun ownPairsAreMarkedOwn() {
+        val e = TypingPairEdits(own = listOf(OwnTypingPair("form", listOf("fort")), OwnTypingPair("zorp", listOf("zorb"), enabled = false)))
+        val m = TypingPairEdits.merge(builtIn, e)
+        assertTrue(m.isOwn("form", "fort"))
+        assertTrue(m.isOwn("Form", "Fort"))
+        assertFalse(m.isOwn("form", "from"))
+        assertFalse(m.isOwn("zorp", "zorb"))
+    }
+
+    @Test fun savingTheSamePairTwiceKeepsOne() {
+        val e = TypingPairEdits(own = listOf(OwnTypingPair("zorp", listOf("zorb"))))
+        assertTrue(e.hasOwn("zorp", "zorb"))
+        assertFalse(e.hasOwn("zorp", "zorb", except = 0))
+        assertEquals(e, e.withOwn(OwnTypingPair("zorp", listOf("zorb"))))
+        // a new word for the same typed word joins its pair
+        assertEquals(listOf(OwnTypingPair("zorp", listOf("zorb", "zorn"))), e.withOwn(OwnTypingPair("zorp", listOf("zorn"))).own)
+        // editing another pair into the same typed word merges the two
+        val two = TypingPairEdits(own = listOf(OwnTypingPair("zorp", listOf("zorb")), OwnTypingPair("quix", listOf("quip"))))
+        assertEquals(listOf(OwnTypingPair("zorp", listOf("zorb", "zorn"))), two.withOwn(OwnTypingPair("zorp", listOf("zorn")), replacing = 1).own)
+        // editing a pair in place
+        assertEquals(listOf(OwnTypingPair("zorp", listOf("zorn")), OwnTypingPair("quix", listOf("quip"))), two.withOwn(OwnTypingPair("zorp", listOf("zorn")), replacing = 0).own)
+    }
+
+    @Test fun parseMergesRepeatedTypedWords() {
+        val e = TypingPairEdits.parse("zorp\tzorb\nzorp\tzorb zorn\n")
+        assertEquals(listOf(OwnTypingPair("zorp", listOf("zorb", "zorn"))), e.own)
     }
 
     @Test fun parseIgnoresBadLines() {
