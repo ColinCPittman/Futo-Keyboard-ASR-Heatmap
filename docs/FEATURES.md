@@ -324,6 +324,7 @@ This part is for anyone who wants the exact rules. It goes setting by setting an
 - [Adaptive swipe learning in detail](#adaptive-swipe-learning-in-detail)
 - [Keyboard options in detail](#keyboard-options-in-detail)
 - [Voice engine in detail](#voice-engine-in-detail)
+- [Performance in detail](#performance-in-detail)
 - [Feature tips in detail](#feature-tips-in-detail)
 
 ## How the scores work
@@ -481,6 +482,8 @@ The punctuation step sometimes ends a sentence in the middle of a phrase you sai
 Filler words, self-correction phrases, quote triggers, emoji names and voice commands can all be edited. Pluto only saves your changes (what you added and what you switched off), so the built-in lists can grow in an update without touching your edits. Each list (except commands) also has a switch for its built-in entries, and a phrase you type that matches a built-in one gets the built-in phrase's special rules.
 
 ### Speed, memory and when models load
+
+(How all this is made fast is in [Performance in detail](#performance-in-detail).)
 
 - **When you open voice typing**, the voice, punctuation and Smart corrections models start loading in the background while you talk.
 - **After you finish**, Smart corrections usually takes about 0.3 to 0.5 seconds for a short message on a mid-range phone, and a second or more for long ones (each kind of fix does its own pass over the text).
@@ -664,6 +667,88 @@ When **Follow system light/dark mode** is on, the day theme defaults to Pluto Fr
 - **Punctuation models.** The English model restores periods, commas, question marks, capital letters and sentence breaks. The multilingual model only adds periods, commas, question marks and colons, and capitals follow simple rules (sentence starts, "I", and words like iPhone left alone). Both keep a ? or ! the speech model heard, never change, add or drop words, and only run after Moonshine.
 - **Cancel.** It stops recording (or the processing after it), erases what that dictation typed, and closes the voice window. Once the text is in, Cancel no longer does anything.
 - **Other voice apps.** While one is selected, Pluto's own voice settings are hidden. Pluto shows a privacy reminder for any app outside a short list of offline ones (FUTO Voice Input, Transcribro and Transcribe).
+
+## Performance in detail
+
+Pluto runs three models on the phone itself (the voice model, the punctuation model and the Smart corrections model), so a lot of the work went into making them quick without using more memory than they need. This is how.
+
+### What happens when you open voice typing
+
+The moment the voice window opens, all three models start loading in the background, while you're still talking. You only notice loading when a dictation is very short and a model hasn't finished yet.
+
+- **Moonshine** (the voice model) loads on its own thread and is ready before your first words need it in almost every case.
+- **The punctuation model** loads at the same time (about 0.8 seconds on a mid-range phone).
+- **The Smart corrections model** loads too (about 0.9 seconds). If it's already loaded from a recent dictation or from typing, nothing happens.
+- **The emoji names** (about 9,000 of them) are built a few seconds after the keyboard itself starts, long before you open voice typing, because building them takes a couple of seconds and the first dictation used to wait for it.
+
+### Keeping models loaded
+
+Loading a model costs time, and keeping it costs memory, so each one has a keep-alive time that balances the two.
+
+| Model | Size | Kept loaded after use |
+|---|---|---|
+| Moonshine (voice) | 39 to 239 MB depending on size | 2 minutes |
+| Punctuation | about 67 MB (English) | 3 minutes |
+| Smart corrections | about 470 MB | 2 minutes after the voice window closes, or 1 minute after the last typing check |
+
+A model is never unloaded while it's in use, and while the voice window is open the Smart corrections model stays put even if typing's own timers run out. (Before this was fixed, a 5-second typing timer could unload the model in the middle of a dictation, and it then had to reload as soon as you finished.)
+
+These two changes made a big difference. On the test phone (a MediaTek Dimensity 7050), the wait after finishing a dictation went like this.
+
+| | Before | After |
+|---|---|---|
+| Median wait after you finish | 2.3 seconds | 0.46 seconds |
+| Dictations that had to reload the model first | 13 of 25 | 0 of 9 |
+| Typical short message | about 1.3 seconds | 0.3 to 0.45 seconds |
+
+### How Smart corrections avoids redoing work
+
+The language model scores text one token (a word or a piece of a word) at a time, and that's the expensive part. Pluto keeps the number of tokens it has to score as small as possible.
+
+- **It remembers the text it already read.** The model keeps its working memory (its "KV cache") for the current text. When it scores a changed version, it reuses everything up to the first changed word and only reads from there on. A fix near the end of a long dictation costs almost nothing extra.
+- **Only the nearby text is re-read.** A candidate fix is scored over the rest of its sentence plus 6 more words, not the whole dictation.
+- **Candidates are scored together.** All the candidates for one kind of fix go through the model at once as parallel versions (up to 8 at a time), in batches of 128 tokens. Bigger batches were tried and were about twice as slow on the phone.
+- **Cheap filters come first.**
+  - Only words the model finds surprising are looked at, and at most 8 per dictation.
+  - Each word gets at most 6 candidates.
+  - A quick check of each candidate's first piece drops the unlikely ones before they're fully scored.
+  - At most 6 extra spots (word joins, names, capitals) and 6 sentence breaks are checked.
+- **No text is generated.** The model never writes anything. It only scores, which is much faster than generating text.
+
+### Using the phone's fast cores
+
+Most phones have a few fast cores and several slow ones, and a calculation split across a fast and a slow core runs at the slow core's pace.
+
+- **Smart corrections** uses 2 threads and pins them to the phone's 2 fastest cores (found from the cores' capacity ratings, or their top speed if those aren't available).
+- **Its weights are repacked** when it loads, into the layout the fastest processor routines need. That makes every check faster, at the cost of keeping that copy in memory.
+- **Moonshine** uses Auto threads, which means your phone's fast cores (2 to 4). You can change this in Advanced options, but more threads on slow cores usually makes it slower.
+- **The punctuation model** picks its own thread count.
+
+### Live voice typing
+
+- **Streaming.** Moonshine is a streaming model, so it works on your speech as you talk instead of waiting until you stop. The words on screen catch up every 0.5 seconds by default (Live text refresh).
+- **Short phrases.** Speech is split into phrases at your pauses (capped at 15 seconds each), so the model only ever works on a short stretch of audio. That's why dictation can go on as long as you like without slowing down.
+- **Catching up.** If the phone falls behind, audio queues up and the next refresh handles a bigger piece, so nothing is lost.
+- **Processing mode.** Standard CPU is usually fastest. XNNPACK and the phone's AI chip (NNAPI) are there to try, and if one fails to load or run, Pluto quietly falls back to Standard. "Show timing info" tells you how long you spoke and how long processing took, which is the easiest way to compare settings on your phone.
+
+### Punctuation
+
+The punctuation step takes about 20 to 90 milliseconds per dictation, because it's a small model that reads the whole transcript in one pass. Long transcripts are read in overlapping windows (256 pieces with 16 overlapping for the English model, 400 with 50 overlapping for the multilingual one), so a sentence on a window edge isn't cut off.
+
+### Typing checks
+
+- **Off the main thread.** Typing checks never block your typing. They run in the background after a space or punctuation, and a fix found mid-word waits until the word ends.
+- **Small window.** Only up to 300 characters before the sentence are scored.
+- **Few candidates.** Real-word typos only consider their listed pairs, and the same quick first-piece filter drops unlikely ones.
+- **Missed typos.** These are capped at 10 candidates per word, and a sentence with more than 2 unknown words is skipped entirely, which also keeps the check quick.
+- **No repeats.** A finished sentence is checked once, and a check that's already running is never thrown away. It just runs again afterwards if the text changed.
+
+### Safety valves
+
+- **One at a time.** Only one Smart corrections check runs at a time (voice and typing share the model).
+- **Cancel stops it.** Cancelling a dictation also stops a check that's in progress, and the text is then left as it was.
+- **Memory sized to fit.** The model's working memory is sized to the text (at least 512 tokens, growing only when needed), and dictations over 1,500 characters are checked in parts.
+- **Failures are harmless.** If a step fails for any reason, it's skipped and its input is passed on, so you never lose a dictation.
 
 ## Feature tips in detail
 
