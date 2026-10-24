@@ -12,6 +12,7 @@ import org.futo.inputmethod.latin.common.Constants
 import org.futo.inputmethod.latin.settings.Settings
 import org.futo.inputmethod.latin.settings.SettingsValues
 import org.futo.inputmethod.latin.uix.isDirectBootUnlocked
+import org.futo.inputmethod.latin.uix.Tuning
 import java.io.File
 import java.util.IdentityHashMap
 import java.util.concurrent.ExecutorService
@@ -116,8 +117,8 @@ object TypingHeatmap {
     @Volatile
     private var lastLandscape = false
 
-    /** Keyboard and heatmap profile a buffered word was typed on. */
-    private class WordContext(val profileId: String, val keyboard: Keyboard)
+    /** Keyboard and heatmap profile a buffered word was typed on, and its path if it was swiped. */
+    private class WordContext(val profileId: String, val keyboard: Keyboard, val path: SwipePath? = null)
 
     /**
      * The last [RECENT_WORDS] committed words, held back (with their raw taps) so that a later
@@ -145,6 +146,18 @@ object TypingHeatmap {
 
     @JvmStatic
     fun getModelVersion(): Int = modelVersion
+
+    /**
+     * Logs a learning detail, words included, but only when developer mode and Developer > "Log typing and
+     * swipe learning" are both on. These logs are for tuning, and keyboard input is private, so nothing is
+     * logged otherwise.
+     */
+    internal fun devLog(tag: String, message: () -> String) {
+        val ctx = appContext ?: return
+        Tuning.learningLog(ctx, tag, message)
+    }
+
+    private fun devLog(message: () -> String) = devLog(TAG, message)
 
     private fun settings(): SettingsValues? = try {
         Settings.getInstance().current
@@ -433,7 +446,7 @@ object TypingHeatmap {
         if (action != MotionEvent.ACTION_DOWN && action != MotionEvent.ACTION_POINTER_DOWN) return
         val fromScreen = event.deviceId > 0
         if (fromScreen != lastTouchFromScreen) {
-            Log.i(TAG, if (fromScreen) "Learning from taps again" else "Not learning from injected taps (device ${event.deviceId})")
+            devLog { if (fromScreen) "Learning from taps again" else "Not learning from injected taps (device ${event.deviceId})" }
         }
         lastTouchFromScreen = fromScreen
     }
@@ -455,8 +468,13 @@ object TypingHeatmap {
     // ---------------------------------------------------------------------------------------
     // Learning
 
-    private fun canLearn(sv: SettingsValues?): Boolean {
-        if (sv == null || !isEnabled(sv)) return false
+    private fun canLearn(sv: SettingsValues?): Boolean = isEnabled(sv) && canLearnAnything(sv)
+
+    private fun canLearnSwipes(sv: SettingsValues?): Boolean = AdaptiveSwipe.isEnabled(sv) && canLearnAnything(sv)
+
+    /** Privacy checks shared by taps and swipes (no password, incognito or no-learning fields). */
+    private fun canLearnAnything(sv: SettingsValues?): Boolean {
+        if (sv == null) return false
         val ia = sv.mInputAttributes ?: return false
         if (ia.mNoLearning || ia.mIsPasswordField || !ia.mShouldShowSuggestions) return false
         if (!sv.isPersonalizationEnabled) return false
@@ -481,7 +499,7 @@ object TypingHeatmap {
     @JvmStatic
     fun onWordCommitted(
         typedWord: String, committedWord: CharSequence?, taps: List<RecordedTap>?,
-        isBatchMode: Boolean, isResumed: Boolean
+        isBatchMode: Boolean, isResumed: Boolean, swipePath: SwipePath?
     ) {
         if (appContext == null) return
         if (Looper.myLooper() != Looper.getMainLooper()) return
@@ -490,7 +508,10 @@ object TypingHeatmap {
         resumedFrom = null
         val attempt = originalAttempt
         originalAttempt = null
-        if (!canLearn(settings())) return
+        val sv = settings()
+        val learnTaps = canLearn(sv)
+        val learnSwipes = canLearnSwipes(sv)
+        if (!learnTaps && !learnSwipes) return
         // A word with symbols typed into it ("hello!", "Tr0ub4dor&x", see InputLogic
         // shouldAttachSymbolToWord) is not a word to learn letter taps from.
         if (hasTypedSymbol(typedWord) || hasTypedSymbol(committed)) {
@@ -504,10 +525,11 @@ object TypingHeatmap {
             // resumed text itself has no usable taps. An emptied word is not a correction.
             if (from != null && committed.any { Character.isLetter(it) }) {
                 val entry = recentWords.relabel(from, committed)
-                // Never log the words themselves (keyboard input is private)
                 if (from != committed) {
-                    Log.i(TAG, if (entry != null) "Relabeled a recent word's taps after a correction"
-                        else "Corrected word was not in the recent-word buffer")
+                    devLog {
+                        if (entry != null) "Relabeled a recent word after a correction: \"$from\" -> \"$committed\""
+                        else "Corrected word \"$from\" -> \"$committed\" was not in the recent-word buffer"
+                    }
                 }
             }
             newestWordOpen = false
@@ -518,18 +540,34 @@ object TypingHeatmap {
         newestWordOpen = true
         // A word typed where words were just deleted with backspace replaces the oldest of them
         // (delete "dent", type "sent") and RecentWordBuffer relabels its taps.
-        val entry = if (isBatchMode || taps.isNullOrEmpty()) null else
-            RecentWordBuffer.Entry(WordContext(profileIdFor(keyboard, lastLandscape), keyboard), typedWord, committed, taps)
+        val profileId = profileIdFor(keyboard, lastLandscape)
+        val entry = if (isBatchMode) {
+            // A swiped word keeps its path (in memory only) so it is learned under the word it finally becomes.
+            if (learnSwipes && swipePath != null && lastTouchFromScreen) {
+                devLog { "Swiped \"$typedWord\", committed as \"$committed\"" }
+                RecentWordBuffer.Entry(WordContext(profileId, keyboard, swipePath), typedWord, committed, emptyList())
+            } else {
+                devLog {
+                    "Swiped \"$typedWord\" not kept for learning (" + when {
+                        !learnSwipes -> "adaptive swipe is off"
+                        swipePath == null -> "no single-finger path"
+                        else -> "injected input"
+                    } + ")"
+                }
+                null
+            }
+        } else if (!learnTaps || taps.isNullOrEmpty()) null else
+            RecentWordBuffer.Entry(WordContext(profileId, keyboard), typedWord, committed, taps)
         // The word was fixed with backspace while typing it, so its original taps are learned under the
         // finished word (the retyped letters are learned from the word's own taps).
-        if (attempt != null && attempt.first != committed && !isBatchMode) {
+        if (attempt != null && attempt.first != committed && !isBatchMode && learnTaps) {
             learn(recentWords.add(RecentWordBuffer.Entry(
                 WordContext(profileIdFor(keyboard, lastLandscape), keyboard), attempt.first, committed, attempt.second)))
-            Log.i(TAG, "Kept the original attempt of a word fixed while typing")
+            devLog { "Kept the original attempt \"${attempt.first}\" of a word fixed while typing to \"$committed\"" }
         }
         val pending = recentWords.deletedCount
         learn(recentWords.onWordTyped(committed, entry))
-        if (pending > 0) Log.i(TAG, "Typed word paired with a deleted word (${pending - 1} deleted left)")
+        if (pending > 0) devLog { "\"$committed\" replaces a deleted word (${pending - 1} deleted left)" }
     }
 
     /** Called by WordComposer before a backspace inside the word being typed is applied. */
@@ -538,6 +576,32 @@ object TypingHeatmap {
         // WordComposer is also used by the spell checker on binder threads
         if (Looper.myLooper() != Looper.getMainLooper()) return
         if (originalAttempt == null && taps != null) originalAttempt = typedWord to taps
+    }
+
+    /**
+     * Called when a swipe starts. The previous word was committed, and a backspace now deletes the
+     * swiped word (see [onSwipeRejected]) rather than starting to delete committed words.
+     */
+    @JvmStatic
+    fun onGestureStarted() {
+        if (Looper.myLooper() != Looper.getMainLooper()) return
+        recentWords.onTypingResumed()
+        newestWordOpen = false
+    }
+
+    /**
+     * Called when a swiped word that was still being composed is deleted with one backspace. It is set
+     * aside like a deleted word, so the word swiped or typed in its place relabels its path.
+     */
+    @JvmStatic
+    fun onSwipeRejected(word: String, path: SwipePath?) {
+        if (Looper.myLooper() != Looper.getMainLooper()) return
+        if (path == null || word.isEmpty() || !lastTouchFromScreen) return
+        if (!canLearnSwipes(settings())) return
+        val keyboard = lastAlphabetKeyboard ?: return
+        val added = recentWords.addDeleted(RecentWordBuffer.Entry(
+            WordContext(profileIdFor(keyboard, lastLandscape), keyboard, path), word, word, emptyList()))
+        devLog { if (added) "Set aside the deleted swipe \"$word\"" else "Deleted swipe \"$word\" not set aside (other deleted words are waiting)" }
     }
 
     /** Called for every input event before it is processed. */
@@ -549,7 +613,7 @@ object TypingHeatmap {
             val before = recentWords.deletedCount
             recentWords.onDelete(startsRun = newestWordOpen)
             newestWordOpen = false
-            if (recentWords.deletedCount > before) Log.i(TAG, "Set aside a deleted word (${recentWords.deletedCount} pending)")
+            if (recentWords.deletedCount > before) devLog { "Set aside a deleted word (${recentWords.deletedCount} pending)" }
         } else if (codePoint > 0 && Character.isLetter(codePoint)) {
             // Next word started.
             recentWords.onTypingResumed()
@@ -577,7 +641,9 @@ object TypingHeatmap {
     @JvmStatic
     fun onKeyboardHidden() {
         originalAttempt = null
-        learn(recentWords.drain())
+        val words = recentWords.drain()
+        if (words.isNotEmpty()) devLog { "Keyboard closed, learning ${words.size} buffered words" }
+        learn(words)
         newestWordOpen = false
         resumedFrom = null
         scheduleSave()
@@ -586,17 +652,38 @@ object TypingHeatmap {
     /** Aligns final words with their taps and adds the resulting samples to the model. */
     private fun learn(words: List<RecentWordBuffer.Entry<WordContext>>) {
         if (words.isEmpty()) return
-        if (!canLearn(settings())) return
+        // The field checks (password, incognito...) were done when each word was buffered. They aren't
+        // repeated here, since the field is often gone already when the keyboard closes.
+        val sv = settings()
+        val learnTaps = isEnabled(sv)
+        val learnSwipes = AdaptiveSwipe.isEnabled(sv)
+        if ((!learnTaps && !learnSwipes) || sv?.isPersonalizationEnabled != true || !isUnlocked()) {
+            devLog { "Dropped ${words.size} buffered words (learning is off)" }
+            return
+        }
         var save = false
         for (word in words) {
             val keyboard = word.context.keyboard
-            val result = TapAligner.align(word.typedWord, word.committedWord, word.taps,
-                false, false) { keyGeometry(keyboard, it) }
-            val samples = result.samples ?: continue
+            val path = word.context.path
+            val profileId: String
+            val samples: List<TapSample>
+            if (path != null) {
+                if (!learnSwipes) continue
+                val result = SwipeAligner.align(word.committedWord, path) { keyGeometry(keyboard, it) }
+                AdaptiveSwipe.countResult(result, word.typedWord, word.committedWord)
+                samples = result.samples ?: continue
+                profileId = AdaptiveSwipe.swipeProfileId(word.context.profileId)
+            } else {
+                if (!learnTaps) continue
+                val result = TapAligner.align(word.typedWord, word.committedWord, word.taps,
+                    false, false) { keyGeometry(keyboard, it) }
+                samples = result.samples ?: continue
+                profileId = word.context.profileId
+            }
             synchronized(lock) {
                 if (!loaded) return
-                model.addSamples(word.context.profileId, samples)
-                val profile = model.profile(word.context.profileId)
+                model.addSamples(profileId, samples)
+                val profile = model.profile(profileId)
                 if (profile != null && profile.schematic == null) {
                     profile.schematic = buildSchematic(keyboard)
                 }
@@ -608,6 +695,33 @@ object TypingHeatmap {
         }
         if (save) scheduleSave()
     }
+
+    /** The learned statistics of a profile's keys, copied (for building a swipe bend field), or null. */
+    internal fun copyProfileKeys(profileId: String): Map<Int, KeyTapStats>? = synchronized(lock) {
+        if (!loaded) return null
+        model.profile(profileId)?.keys?.mapValues { it.value.copy() }
+    }
+
+    /** Deletes the profiles whose id matches [predicate] (e.g. only the swipe profiles). */
+    fun resetProfiles(predicate: (String) -> Boolean) {
+        synchronized(lock) {
+            if (!loaded) return
+            if (model.profiles.keys.removeAll(predicate)) {
+                dirty = true
+                modelVersion++
+            }
+        }
+        scheduleSave()
+    }
+
+    internal fun lastAlphabetKeyboard(): Keyboard? = lastAlphabetKeyboard
+    internal fun lastLandscape(): Boolean = lastLandscape
+
+    internal fun letterKeyGeometries(keyboard: Keyboard): List<SwipeBendField.Companion.Key> =
+        keyboard.sortedKeys.filter { isLetterKey(it) }.mapNotNull { key ->
+            val code = Character.toLowerCase(key.code)
+            keyGeometry(keyboard, code)?.let { SwipeBendField.Companion.Key(code, it) }
+        }.distinctBy { it.code }
 
     private fun buildSchematic(keyboard: Keyboard): KeyboardSchematic? {
         val w = keyboard.mOccupiedWidth.toFloat()

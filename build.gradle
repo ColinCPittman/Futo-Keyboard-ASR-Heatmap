@@ -212,6 +212,13 @@ tasks.register('updateContributors') {
 
 preBuild.dependsOn updateLocales
 
+def plutoTuningDir() {
+    if (!project.hasProperty('plutoTuning')) return 'java/tuning-stub'
+    if (!file('java/tuning-private').exists()) throw new GradleException("-PplutoTuning needs java/tuning-private")
+    logger.lifecycle("Pluto: building WITH the private tuning tools (never publish this build)")
+    return 'java/tuning-private'
+}
+
 android {
     namespace 'org.futo.inputmethod.latin'
 
@@ -373,7 +380,9 @@ android {
                     translationsWithoutEngValues('translations/core-ign'),
                     'java/res-large'
             ]
-            java.srcDirs = ['common/src', 'java/src']
+            // Pluto: the developer's private tuning tools (java/tuning-private, git-ignored) are only
+            // built with -PplutoTuning; every other build, releases included, gets the no-op stubs
+            java.srcDirs = ['common/src', 'java/src', plutoTuningDir()]
             manifest.srcFile 'java/AndroidManifest.xml'
             assets.srcDirs = ['java/assets']
         }

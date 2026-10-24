@@ -22,7 +22,7 @@ Words appear while you speak, for as long as you speak, with nothing sent anywhe
 
 <img src="docs/assets/readme-screens-1.png" alt="Voice typing, the typing fix chip, the tap heatmap, emoji by name" width="100%">
 
-Smart corrections also works when you type. Once you finish a sentence, it rereads it and fixes the typos that slipped past the usual autocorrect. It **catches typos that are real words**, like "salt an pepper", **and missed typos**, which are misspellings that got through anyway. For those, it works out the word you meant from the letters you typed and the words around them. Each fix shows up as a small button in the suggestion bar above the keyboard, and tapping it changes the word back. Undoing a fix teaches it to be more careful in that context, and fixing a missed typo yourself makes it more confident, so it adapts to how you write over time. You can also highlight a word you often mistype and teach it the word you meant. Like the voice features, each kind of fix has its own toggle and a sensitivity slider. Underneath all of this, the **typing heatmap** learns where your thumbs actually land and quietly adjusts the keys to meet them.
+Smart corrections also works when you type. Once you finish a sentence, it rereads it and fixes the typos that slipped past the usual autocorrect. It **catches typos that are real words**, like "salt an pepper", **and missed typos**, which are misspellings that got through anyway. For those, it works out the word you meant from the letters you typed and the words around them. Each fix shows up as a small button in the suggestion bar above the keyboard, and tapping it changes the word back. Undoing a fix teaches it to be more careful in that context, and fixing a missed typo yourself makes it more confident, so it adapts to how you write over time. You can also highlight a word you often mistype and teach it the word you meant. Like the voice features, each kind of fix has its own toggle and a sensitivity slider. Underneath all of this, the **typing heatmap** learns where your thumbs actually land and quietly adjusts the keys to meet them. If you swipe, **adaptive swipe learning** does the same for your swipes, learning where they start, end and turn over each key.
 
 For a full guide to every feature, how it works and how to get the most out of it, see [docs/FEATURES.md](docs/FEATURES.md).
 
@@ -44,8 +44,8 @@ For a full guide to every feature, how it works and how to get the most out of i
 - Pluto has **no internet permission**. Android itself blocks it from connecting to anything.
 - Everything is stored on your phone (your settings, the words it learns, your personal dictionary, and any model files you import).
 - The adaptive typing heatmap saves only per-key statistics (roughly "taps on the letter E tend to land a bit to the left"), never the words you type. You can view it or reset it in settings.
+- Adaptive swipe learning saves the same kind of per-key numbers for your swipes, never words or swipe paths.
 - Voice input is processed on your phone. The voice and correction models are only loaded when you use voice input and are unloaded again within a few minutes.
-- There is one exception you have to switch on yourself. **Save dictations for tuning**, in the developer settings, keeps your last 200 dictations in a file on your phone so you can study them on a computer. It is off unless you turn it on, and turning it off deletes them. It is meant for tuning Smart Corrections. If you want to optimize Smart Corrections' behavior, it gives you real examples to test against.
 - Pluto is not available in an app store, so there is no store account involved either.
 
 ## Report a problem or suggest a feature
@@ -57,7 +57,7 @@ The issue form will ask for the following, and it all helps a lot.
 - Your phone model and Android version.
 - The Pluto Keyboard version (shown in the app's settings).
 - What happened, what you expected, and the steps to make it happen again.
-- Which features you have on (which voice model, punctuation fix, Smart corrections, adaptive typing heatmap).
+- Which features you have on (which voice model, punctuation fix, Smart corrections, adaptive typing heatmap, adaptive swipe learning).
 
 Please do not include passwords or private text in screenshots or recordings.
 
@@ -65,7 +65,7 @@ Please do not include passwords or private text in screenshots or recordings.
 
 Pluto Keyboard is a modified version of [FUTO Keyboard](https://github.com/futo-org/android-keyboard) by FUTO, which in turn is built on [LatinIME, the Android Open Source Project keyboard](https://android.googlesource.com/platform/packages/inputmethods/LatinIME). Nearly all of what you see in Pluto is FUTO's work, and I am grateful to them for releasing it where people can build on it.
 
-**Modification notice.** This is a modified copy of FUTO Keyboard, made by Colin Pittman for non-commercial use. My changes include the Moonshine streaming voice engine, the punctuation and Smart corrections steps for voice input (with voice commands, emoji by name and the other extras above), Smart corrections for typing, the adaptive typing heatmap, the "Always use middle suggestion" and "Correct words before punctuation" options, the personal dictionary and password-protection changes, and the Pluto name, icon and package ID (`io.github.colincpittman.plutokeyboard`). Pluto is **not affiliated with or endorsed by FUTO**, and if something is broken in Pluto, please report it here and not to FUTO.
+**Modification notice.** This is a modified copy of FUTO Keyboard, made by Colin Pittman for non-commercial use. My changes include the Moonshine streaming voice engine, the punctuation and Smart corrections steps for voice input (with voice commands, emoji by name and the other extras above), Smart corrections for typing, the adaptive typing heatmap and adaptive swipe learning, the "Always use middle suggestion" and "Correct words before punctuation" options, the personal dictionary and password-protection changes, and the Pluto name, icon and package ID (`io.github.colincpittman.plutokeyboard`). Pluto is **not affiliated with or endorsed by FUTO**, and if something is broken in Pluto, please report it here and not to FUTO.
 
 **License.** The code is under the [FUTO Source First License 1.1](LICENSE.md). In plain terms, you can use it for anything, and you can modify and share it for non-commercial purposes, free of charge, as long as you keep the notices. FUTO's payment option has been left in the app, as the license requires. It supports FUTO, not me, and if you enjoy this keyboard I would encourage you to support them. The original AOSP notices are in [NOTICE](NOTICE).
 

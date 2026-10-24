@@ -98,9 +98,6 @@
     <string name="voice_input_settings_open_android_keyboards_subtitle">Turn on other voice typing apps, such as Google voice typing</string>
 
     <!-- Developer settings: Save dictations for tuning -->
-    <string name="pluto_save_dictations">Save dictations for tuning</string>
-    <string name="pluto_save_dictations_subtitle">Keeps your last 200 dictations on this phone, each as the voice model heard it, after punctuation and after Smart corrections, so you can study and improve voice typing on a computer. This saves what you say. Nothing leaves your phone on its own, and turning this off deletes them.</string>
-    <string name="pluto_saved_dictations_delete">Delete saved dictations (%1$d)</string>
     <string name="voice_input_cancel_discard">Cancel</string>
 
     <!-- Smart corrections for typing (Text prediction setting, strip chip, review list) -->

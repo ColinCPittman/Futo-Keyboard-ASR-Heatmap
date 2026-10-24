@@ -62,6 +62,7 @@ import org.futo.inputmethod.engine.general.WordLearner
 import org.futo.inputmethod.latin.SuggestedWords.SuggestedWordInfo
 import org.futo.inputmethod.latin.common.Constants
 import org.futo.inputmethod.latin.settings.Settings
+import org.futo.inputmethod.latin.uix.ContextModels
 import org.futo.inputmethod.latin.uix.BasicThemeProvider
 import org.futo.inputmethod.latin.uix.DataStoreHelper
 import org.futo.inputmethod.latin.uix.DynamicThemeProvider
@@ -392,6 +393,9 @@ class LatinIME : InputMethodServiceCompose(), LatinIMELegacy.SuggestionStripCont
         LayoutManager.init(this)
 
         DataStoreHelper.init(this)
+
+        // the emoji names for Smart corrections take a few seconds to build, so start early
+        if (isDirectBootUnlocked) ContextModels.warmUp(this)
 
         val filter = IntentFilter(Intent.ACTION_USER_UNLOCKED)
         registerReceiver(unlockReceiver, filter)

@@ -51,7 +51,7 @@ class SettingsBackupRoundTripTest {
         SMART_CORRECTIONS_QUOTE_TRIGGERS_BUILT_IN.key to false,
         SMART_CORRECTIONS_EMOJI_LIST.key to "lol\t😂\nthumbs up\t0",
         SMART_CORRECTIONS_EMOJI_BUILT_IN.key to false,
-        DictationRecorder.SAVE_DICTATIONS.key to true,
+        TYPING_FIX_MISSED_TYPOS.key to false,
     )
 
     private fun plutoPreferences(): Preferences = mutablePreferencesOf(*plutoSettings.toTypedArray())
@@ -92,7 +92,7 @@ class SettingsBackupRoundTripTest {
         assertEquals(plutoSettings.size, restored.asMap().size)
         assertEquals(plutoPreferences(), restored)
         assertEquals("lol\t😂\nthumbs up\t0", restored[SMART_CORRECTIONS_EMOJI_LIST.key])
-        assertEquals(true, restored[DictationRecorder.SAVE_DICTATIONS.key])
+        assertEquals(false, restored[TYPING_FIX_MISSED_TYPOS.key])
     }
 
     @Test

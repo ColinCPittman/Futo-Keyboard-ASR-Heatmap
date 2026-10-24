@@ -52,6 +52,9 @@ object ContextModels {
     private class Loaded(val id: String, val dir: File, val stamp: Long, val model: ContextModel)
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    /** How long the model stays loaded after the voice window closes. */
+    private const val VOICE_KEEP_MS = 2 * 60 * 1000L
     private val mutex = Mutex()
     private var loaded: Loaded? = null
 
@@ -300,14 +303,54 @@ object ContextModels {
         typingRelease?.cancel()
         typingRelease = scope.launch {
             delay(delayMs)
-            mutex.withLock { if (busy == null) releaseLocked() }
+            // voice input may be using the same model (it is kept while the voice window is open)
+            mutex.withLock { if (busy == null && !voiceOpen) releaseLocked() }
+        }
+    }
+
+    /** Voice input's window is open, so the model stays loaded (typing's release timers wait). */
+    @Volatile
+    private var voiceOpen = false
+
+    private var voiceRelease: Job? = null
+
+    /**
+     * Voice input's window closed. The model stays loaded for [VOICE_KEEP_MS] in case another
+     * dictation follows (reloading it takes about a second), then it is freed.
+     */
+    fun voiceClosed() {
+        voiceOpen = false
+        voiceRelease?.cancel()
+        voiceRelease = scope.launch {
+            delay(VOICE_KEEP_MS)
+            mutex.withLock { if (busy == null && !voiceOpen) releaseLocked() }
+        }
+    }
+
+    /**
+     * Builds the emoji names in the background a few seconds after the keyboard starts, so the
+     * first dictation doesn't wait for them (building them takes several seconds on a phone).
+     */
+    fun warmUp(context: Context) {
+        if (!deviceSupported) return
+        val app = context.applicationContext
+        scope.launch {
+            // (the settings are read after the wait, once they have loaded)
+            delay(3_000L)
+            if (!app.getSetting(CONTEXT_MODEL_ENABLED) || !app.getSetting(SMART_CORRECTIONS_EMOJI)) return@launch
+            EmojiNameDefaults.nameMap(app, app.getSetting(SMART_CORRECTIONS_EMOJI_LIST))
         }
     }
 
     /** Starts loading the model for [locale] in the background (voice input just opened). */
     fun preload(context: Context, locale: Locale) {
         val pkg = packageFor(context, locale) ?: return
-        if (context.getSetting(SMART_CORRECTIONS_EMOJI)) scope.launch { EmojiNameDefaults.get(context) }
+        voiceOpen = true
+        voiceRelease?.cancel()
+        // the emoji names are built now too, so the first dictation doesn't wait for them
+        if (context.getSetting(SMART_CORRECTIONS_EMOJI)) scope.launch {
+            EmojiNameDefaults.nameMap(context, context.getSetting(SMART_CORRECTIONS_EMOJI_LIST))
+        }
         scope.launch {
             try {
                 mutex.withLock { obtainLocked(pkg) }
@@ -347,7 +390,7 @@ object ContextModels {
         left: String = "",
         queued: Long = System.nanoTime(),
     ): String = mutex.withLock {
-        try {
+        run {
             val start = System.nanoTime()
             DictationRecorder.note(context, "context_wait_ms", (start - queued) / 1_000_000)
             DictationRecorder.note(context, "context_left_chars", left.length.toLong())
@@ -378,10 +421,8 @@ object ContextModels {
                     busy = null
                 }
             }
-        } finally {
-            // the transcript is done, so don't keep the model around
-            releaseLocked()
         }
+        // the model stays loaded for the next dictation (voiceClosed frees it a little later)
     }
 
     private fun obtainLocked(pkg: InstalledModelPackage): ContextModel {

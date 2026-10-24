@@ -27,6 +27,7 @@ import android.view.View;
 import android.view.inputmethod.EditorInfo;
 
 import org.futo.inputmethod.compat.AppWorkaroundsUtils;
+import org.futo.inputmethod.latin.heatmap.SwipeConfig;
 import org.futo.inputmethod.latin.InputAttributes;
 import org.futo.inputmethod.latin.R;
 import org.futo.inputmethod.latin.Subtypes;
@@ -103,6 +104,8 @@ public class SettingsValues {
     public final boolean mIsUsingAlternativePeriodKey;
     public final boolean mUseDictionaryKeyBoosting;
     public final boolean mUseTypingHeatmap;
+    public final boolean mAdaptiveSwipe;
+    public final int mAdaptiveSwipeStrength;
     public final int mScreenMetrics;
 
     public final boolean mBackspaceDeletesInsertedText;
@@ -191,6 +194,9 @@ public class SettingsValues {
         mIsUsingAlternativePeriodKey = prefs.getBoolean(Settings.PREF_ENABLE_ALT_PERIOD_KEY, false) && SettingsValues.altPeriodKeyAllowedForLocale(mLocale);
         mUseDictionaryKeyBoosting = prefs.getBoolean(Settings.PREF_USE_DICT_KEY_BOOSTING, true);
         mUseTypingHeatmap = prefs.getBoolean(Settings.PREF_USE_TYPING_HEATMAP, true);
+        mAdaptiveSwipe = prefs.getBoolean(Settings.PREF_ADAPTIVE_SWIPE, true);
+        mAdaptiveSwipeStrength = prefs.getInt(Settings.PREF_ADAPTIVE_SWIPE_STRENGTH,
+                SwipeConfig.DEFAULT_STRENGTH);
         mUseContactsDict = prefs.getBoolean(Settings.PREF_KEY_USE_CONTACTS_DICT, true);
         mUsePersonalizedDicts = prefs.getBoolean(Settings.PREF_KEY_USE_PERSONALIZED_DICTS, true);
         mUseDoubleSpacePeriod = prefs.getBoolean(Settings.PREF_KEY_USE_DOUBLE_SPACE_PERIOD, true)

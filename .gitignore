@@ -19,3 +19,6 @@ local-models/
 tools/punctuation-harness/testdata/kt_*
 hs_err_pid*.log
 tools/branding/pluto-art.svg
+
+# Private tuning tools (dictation recording, learning logs), only built with -PplutoTuning, never published
+java/tuning-private/

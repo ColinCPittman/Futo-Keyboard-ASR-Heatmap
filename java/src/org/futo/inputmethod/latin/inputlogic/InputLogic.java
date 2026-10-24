@@ -48,6 +48,7 @@ import org.futo.inputmethod.latin.common.Constants;
 import org.futo.inputmethod.latin.common.InputPointers;
 import org.futo.inputmethod.latin.common.StringUtils;
 import org.futo.inputmethod.latin.define.DebugFlags;
+import org.futo.inputmethod.latin.heatmap.TypingHeatmap;
 import org.futo.inputmethod.latin.settings.Settings;
 import org.futo.inputmethod.latin.settings.SettingsValues;
 import org.futo.inputmethod.latin.settings.SettingsValuesForSuggestion;
@@ -773,6 +774,7 @@ public final class InputLogic {
                 commitCurrentAutoCorrection(settingsValues, LastComposedWord.NOT_A_SEPARATOR);
             }
         }
+        TypingHeatmap.onGestureStarted();
         final int codePointBeforeCursor = mConnection.getCodePointBeforeCursor();
         if (Character.isLetterOrDigit(codePointBeforeCursor)
                 || settingsValues.isUsuallyFollowedBySpace(codePointBeforeCursor)) {
@@ -1483,6 +1485,7 @@ public final class InputLogic {
         if (mWordComposer.isComposingWord() && !mConnection.hasSelection()) {
             if (mWordComposer.isBatchMode()) {
                 final String rejectedSuggestion = mWordComposer.getTypedWord();
+                TypingHeatmap.onSwipeRejected(rejectedSuggestion, mWordComposer.takeSwipePath());
                 mWordComposer.reset(true);
                 mWordComposer.setRejectedBatchModeSuggestion(rejectedSuggestion);
                 if (!TextUtils.isEmpty(rejectedSuggestion)) {

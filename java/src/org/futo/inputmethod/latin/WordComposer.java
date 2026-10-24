@@ -31,6 +31,8 @@ import org.futo.inputmethod.latin.define.DebugFlags;
 import org.futo.inputmethod.latin.define.DecoderSpecificConstants;
 import org.futo.inputmethod.latin.heatmap.HeatmapLayout;
 import org.futo.inputmethod.latin.heatmap.TapRecorder;
+import org.futo.inputmethod.latin.heatmap.AdaptiveSwipe;
+import org.futo.inputmethod.latin.heatmap.SwipePath;
 import org.futo.inputmethod.latin.heatmap.TypingHeatmap;
 import org.futo.inputmethod.v2keyboard.CombinerKind;
 import org.jetbrains.annotations.NotNull;
@@ -65,6 +67,8 @@ public final class WordComposer {
     private final InputPointers mInputPointers = new InputPointers(MAX_WORD_LENGTH);
     // Raw tap positions of the composing word, for the adaptive typing heatmap
     private final TapRecorder mTapRecorder = new TapRecorder(MAX_WORD_LENGTH);
+    // The raw path of the current swipe (before adaptive swipe bending), for learning.
+    private SwipePath mSwipePath;
     private SuggestedWordInfo mAutoCorrection;
     private boolean mIsResumed;
     private boolean mIsBatchMode;
@@ -320,8 +324,17 @@ public final class WordComposer {
     }
 
     public void setBatchInputPointers(final InputPointers batchPointers) {
-        mInputPointers.set(batchPointers);
+        mSwipePath = AdaptiveSwipe.capturePath(batchPointers);
+        // The recognizer sees the path where this user "means" it, according to adaptive swipe learning.
+        mInputPointers.set(AdaptiveSwipe.bend(batchPointers));
         mIsBatchMode = true;
+    }
+
+    /** Returns the raw path of the swiped word (null if it wasn't swiped) and forgets it. */
+    public SwipePath takeSwipePath() {
+        final SwipePath path = mIsBatchMode ? mSwipePath : null;
+        mSwipePath = null;
+        return path;
     }
 
     public void setBatchInputWord(final String word) {
@@ -525,7 +538,7 @@ public final class WordComposer {
                 mInputPointers, mTypedWordCache.toString(), committedWord, separatorString,
                 ngramContext, mCapitalizedMode);
         TypingHeatmap.onWordCommitted(mTypedWordCache.toString(), committedWord,
-                mTapRecorder.snapshot(mCodePointSize), mIsBatchMode, mIsResumed);
+                mTapRecorder.snapshot(mCodePointSize), mIsBatchMode, mIsResumed, takeSwipePath());
         mInputPointers.reset();
         if (type != LastComposedWord.COMMIT_TYPE_DECIDED_WORD
                 && type != LastComposedWord.COMMIT_TYPE_MANUAL_PICK) {

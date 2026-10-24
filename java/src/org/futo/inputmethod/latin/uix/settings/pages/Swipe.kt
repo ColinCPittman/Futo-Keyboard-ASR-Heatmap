@@ -232,6 +232,13 @@ val SwipeMenu = UserSettingsMenu(
             default = {false},
         ),
 
+        userSettingNavigationItem(
+            title = R.string.adaptive_swipe_title,
+            subtitle = R.string.adaptive_swipe_nav_subtitle,
+            navigateTo = AdaptiveSwipeMenu.navPath,
+            style = NavigationItemStyle.Misc
+        ),
+
         // KASROZ is primarily for English and the menu isn't translated, so it's hidden if user
         // doesn't have English layout
         UserSetting(R.string.swipe_settings_kasroz, subtitle = R.string.swipe_settings_kasroz_subtitle, visibilityCheck = {

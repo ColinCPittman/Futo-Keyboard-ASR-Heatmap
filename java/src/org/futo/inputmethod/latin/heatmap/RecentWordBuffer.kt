@@ -70,6 +70,20 @@ class RecentWordBuffer<C>(private val capacity: Int) {
         }
     }
 
+    /**
+     * A word that was never committed (a swiped word deleted with one backspace) was deleted. It is the newest
+     * text, and the backspaces that follow continue the run past it (its separator, then the committed words
+     * before it). Not added when other deleted words are still waiting, since the next word then replaces those.
+     * Returns whether it was added.
+     */
+    fun addDeleted(entry: Entry<C>): Boolean {
+        if (deleted.isNotEmpty()) return false
+        deleted.addLast(entry)
+        deletedChars = 0
+        deletedBudget = 1
+        return true
+    }
+
     /** The user typed a letter, so the current run of backspaces (if any) is over. */
     fun onTypingResumed() {
         deletedChars = 0

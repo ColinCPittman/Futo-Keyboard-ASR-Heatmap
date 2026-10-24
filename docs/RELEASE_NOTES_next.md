@@ -11,11 +11,13 @@ This update is mostly about Smart corrections for typing, which can now catch pl
 - **Stop a fix.** Right after you undo a typing fix, the button offers Stop for a few seconds, which turns that fix off everywhere.
 - **It learns from you.** Undoing a fix makes it more careful in that context, and fixing a miss yourself makes it more confident next time.
 - **Up to two fixes per sentence** for typing, instead of one.
+- **Adaptive swipe learning.** Swipe typing now learns too. It learns where your swipes start, end and turn over each key (from swipes you keep and swipes you fix) and adjusts new swipes to match before they're read. It has a Strength setting under Swipe Typing, its own reset, and it only saves per-key positions, never words or swipe paths.
 - **Feature tips.** The first time you meet a feature (your first fix, your first undo, selecting a word and so on), a short tip explains it. You can turn tips off, or see them all again, under Help.
 - **Live voice typing options.** Under Voice Input → Advanced options you can now choose whether words show while you speak, how often the live text refreshes, and whether voice typing stops by itself after a pause.
 
 ## Voice improvements
 
+- Voice typing finishes much faster after you stop speaking (about half a second for a typical message, down from around two seconds), because the Smart corrections model now stays loaded between dictations.
 - Amounts said with a unit always become digits, so "six hundred dollars profit" is now "$600 profit" and "800 dollars" is "$800".
 - "You know" is no longer removed as a filler word, since people usually mean it. You can still add it to your own list.
 - A self-correction phrase at the very start of a dictation ("No, I mean the blue one") is left alone, because it's usually correcting a message you already sent.

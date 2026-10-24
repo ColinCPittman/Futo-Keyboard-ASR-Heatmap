@@ -151,4 +151,26 @@ class RecentWordBufferTest {
         assertEquals((d.x + 2 - key('s').centerX) / KEY_W, s.dx, 1e-4f)
         assertTrue("tap was to the right of 's'", s.dx > 0.4f)
     }
+
+    @Test
+    fun rejectedSwipeIsReplacedByTheNextWord() {
+        val buffer = RecentWordBuffer<Unit>(10)
+        buffer.add(entry("the"))
+        val swipe = RecentWordBuffer.Entry(Unit, "gone", "gone", emptyList())
+        assertTrue(buffer.addDeleted(swipe))
+        assertEquals(1, buffer.deletedCount)
+        buffer.onWordTyped("home", null)
+        assertEquals("home", swipe.committedWord)
+        assertEquals(listOf("the", "home"), buffer.drain().map { it.committedWord })
+    }
+
+    @Test
+    fun rejectedSwipeAfterDeletingWordsIsDropped() {
+        val buffer = RecentWordBuffer<Unit>(10)
+        buffer.add(entry("dent"))
+        buffer.onDelete(startsRun = true)
+        assertEquals(1, buffer.deletedCount)
+        assertTrue(!buffer.addDeleted(RecentWordBuffer.Entry(Unit, "gone", "gone", emptyList())))
+        assertEquals(1, buffer.deletedCount)
+    }
 }

@@ -8,7 +8,7 @@ import androidx.compose.runtime.getValue
 
 import androidx.compose.runtime.mutableIntStateOf
 
-import org.futo.inputmethod.latin.uix.DictationRecorder
+import org.futo.inputmethod.latin.uix.Tuning
 
 import android.content.Context
 import android.content.Intent
@@ -91,6 +91,8 @@ import kotlin.system.exitProcess
 
 
 val IS_DEVELOPER = SettingsKey(booleanPreferencesKey("isDeveloperMode"), false)
+
+/** Pluto: log what the typing heatmap and adaptive swipe learn (words included), for tuning. Needs developer mode. */
 
 @OptIn(DebugOnly::class)
 @Composable
@@ -212,34 +214,8 @@ fun DeveloperScreen(navController: NavHostController = rememberNavController()) 
 
         SettingToggleDataStore(title = "Developer mode", setting = IS_DEVELOPER)
 
-        // Pluto: save dictations at every voice-input step, for tuning with the PC test tools
-        val saveDictations = useDataStore(DictationRecorder.SAVE_DICTATIONS)
-        var savedCount by remember { mutableIntStateOf(DictationRecorder.count(context)) }
-        SettingToggleRaw(
-            stringResource(R.string.pluto_save_dictations),
-            saveDictations.value,
-            { on ->
-                if (!on) {
-                    DictationRecorder.deleteAll(context)
-                    savedCount = 0
-                }
-                saveDictations.setValue(on)
-            },
-            stringResource(R.string.pluto_save_dictations_subtitle),
-            false,
-            { }
-        )
-        if (saveDictations.value || savedCount > 0) {
-            NavigationItem(
-                title = stringResource(R.string.pluto_saved_dictations_delete, savedCount),
-                subtitle = DictationRecorder.file(context)?.absolutePath,
-                style = NavigationItemStyle.MiscNoArrow,
-                navigate = {
-                    DictationRecorder.deleteAll(context)
-                    savedCount = 0
-                }
-            )
-        }
+        // the developer's private tuning tools (nothing in public builds)
+        Tuning.DeveloperRows()
 
         CrashLoggingApplication.CopyLogsOption()
 

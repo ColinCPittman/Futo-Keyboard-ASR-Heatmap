@@ -169,8 +169,8 @@ private class VoiceInputActionWindow(
         shouldPlaySounds = enableSound
 
         // Post-processing chain of punctuation restoration, then the context model (identity if both
-        // are off), and the models load while the user speaks. The context model is released again
-        // when the transcript is done or this window closes.
+        // are off), and the models load while the user speaks. The context model stays loaded
+        // a couple of minutes after this window closes, so the next dictation doesn't reload it.
         val locale = locales.firstOrNull() ?: Locale.ROOT
         if (DictationRecorder.isEnabled(context)) DictationFollowUp.check()
         val postProcessor = VoiceInputEngines.postProcessorFor(
@@ -359,8 +359,8 @@ private class VoiceInputActionWindow(
         runBlocking { initJob.cancelAndJoin() }
         recognizerView.value?.cancel()
         state.modelManager.cancelAll()
-        // the context model is only kept while the voice window is open
-        ContextModels.release()
+        // the context model stays loaded for a couple of minutes, in case another dictation follows
+        ContextModels.voiceClosed()
         return CloseResult.Default
     }
 

@@ -59,6 +59,7 @@ import org.futo.inputmethod.latin.uix.settings.pages.SearchScreen
 import org.futo.inputmethod.latin.uix.settings.pages.SelectLanguageScreen
 import org.futo.inputmethod.latin.uix.settings.pages.SelectLayoutsScreen
 import org.futo.inputmethod.latin.uix.settings.pages.SwipeMenu
+import org.futo.inputmethod.latin.uix.settings.pages.AdaptiveSwipeMenu
 import org.futo.inputmethod.latin.uix.settings.pages.TypingHeatmapScreen
 import org.futo.inputmethod.latin.uix.settings.pages.TypingSettingsMenu
 import org.futo.inputmethod.latin.uix.settings.pages.VoiceInputMenu
@@ -126,6 +127,7 @@ val SettingsMenus = listOf(
     ResizeMenuLite,
     LongPressMenu,
     SwipeMenu,
+    AdaptiveSwipeMenu,
     PredictiveTextMenu,
     TypingSmartCorrectionsMenu,
     TypingPairsMenu,

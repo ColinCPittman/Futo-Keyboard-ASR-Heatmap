@@ -20,11 +20,14 @@ object EmojiNameDefaults {
      * The built-in names (unless [SMART_CORRECTIONS_EMOJI_BUILT_IN] is off) with your changes
      * ([SMART_CORRECTIONS_EMOJI_LIST]) as the name -> emoji map, kept until they change.
      */
-    fun nameMap(context: Context, stored: String): Map<List<String>, String> {
+    fun nameMap(context: Context, stored: String): Map<List<String>, String> = synchronized(this) {
+        // (one build at a time, since a warm-up and a dictation may ask at once)
         val key = stored to context.getSetting(SMART_CORRECTIONS_EMOJI_BUILT_IN)
         lastMap?.let { (k, map) -> if (k == key) return map }
+        val start = System.nanoTime()
         val index = get(context)
         val map = EmojiNames.nameMap(index, EmojiNames.parse(stored, index), builtIn = key.second)
+        android.util.Log.i("EmojiNameDefaults", "Built ${map.size} emoji names in ${(System.nanoTime() - start) / 1_000_000} ms")
         lastMap = key to map
         return map
     }

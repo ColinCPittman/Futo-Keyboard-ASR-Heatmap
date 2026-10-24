@@ -12,16 +12,22 @@ Everything here runs on your phone. Pluto has no internet permission, so nothing
   - [Smart corrections for voice](#smart-corrections-for-voice)
   - [Sensitivity dials](#sensitivity-dials)
   - [Advanced voice options](#advanced-voice-options)
-  - [Saving dictations for tuning](#saving-dictations-for-tuning)
+  - [Choosing the voice input app](#choosing-the-voice-input-app)
+  - [Managing models](#managing-models)
 - [Typing](#typing)
   - [Smart corrections for typing](#smart-corrections-for-typing)
   - [The typing corrections list](#the-typing-corrections-list)
   - [Adaptive typing heatmap](#adaptive-typing-heatmap)
+  - [Adaptive swipe learning](#adaptive-swipe-learning)
+  - [The suggestion menu](#the-suggestion-menu)
   - [Always use middle suggestion](#always-use-middle-suggestion)
   - [Correct words before punctuation](#correct-words-before-punctuation)
+- [Your words and names](#your-words-and-names)
 - [Privacy](#privacy)
 - [Themes](#themes)
+- [Backup and moving from FUTO Keyboard](#backup-and-moving-from-futo-keyboard)
 - [Feature tips](#feature-tips)
+- [Help](#help)
 - [Getting the models](#getting-the-models)
 
 ---
@@ -153,9 +159,17 @@ These are under Voice Input → **Advanced options**, and they apply when a Moon
 - **Stop after silence.** Finishes voice typing after you've been quiet for the time you choose, as if you tapped to finish. Background noise can keep it listening.
 - **Processing mode** and **Processor cores.** How the model runs on your phone. Standard is usually fastest. Turn on **Show timing info** to compare settings on your phone.
 
-### Saving dictations for tuning
+### Choosing the voice input app
 
-**Save dictations for tuning** (in Developer Settings) keeps your last 200 dictations on the phone, each one as the voice model heard it, after punctuation, and after Smart corrections. It's for studying and improving voice typing on a computer. It saves what you say, so it's off by default. Nothing leaves your phone on its own, and turning it off deletes the saved dictations.
+The microphone button uses Pluto's own offline voice typing by default. On the Voice Input page you can pick another voice typing app instead (such as Google voice typing, after you turn it on with **Open Android keyboard settings**). Just keep in mind that other apps may send your speech to online servers, and Pluto's privacy promises don't cover them. Pluto shows a reminder when you pick one.
+
+### Managing models
+
+- **Set up voice typing** (on the Voice Input page) walks you through the three model files. Each step has a **Download** button that opens the file in your browser and an **Import** button for picking the downloaded file, and a step shows ✓ Installed once it's done.
+- **Languages & Models → English** lists the voice, punctuation and Smart corrections models you have. Pick which one to use, import more, or delete one you don't need (you'd have to import it again to use it).
+- When you import a package, Pluto shows its name, type, language, license and where it came from before installing it.
+- FUTO's Whisper models still work for other languages, and **Explore Whisper voice models** links to FUTO's page for them.
+- Want to package a different model? [MODELS.md](MODELS.md) explains the format.
 
 ---
 
@@ -218,6 +232,27 @@ Select one word in any text field and an **Add correction** button appears in th
 - Learning uses words you finish. `RecentWordBuffer` holds recent words' raw tap positions for a moment. If you then correct a word (choose a suggestion, let autocorrect change it, go back and edit it, or delete and retype it), the taps are relabelled with the word you meant. `TapAlignment` accepts only plausible typos (same length, few substitutions, plain taps). Nothing is learned in password or incognito fields.
 - The learned offsets shift and resize each key's effective hit area in `KeyDetector`, by at most half a key. The corrected tap positions are also passed to the suggestion engines.
 
+**The heatmap screen.** The dots show where you recently tapped each letter, compared with the key, and the marker and line show how far that key has shifted to match you. It also shows how many taps it has learned in total and per key. Portrait and landscape (and split layouts) each get their own profile. **Reset what was learned** starts over, and the keys go back to normal until it learns again.
+
+### Adaptive swipe learning
+
+**What it does.** This does for swipe typing what the heatmap does for taps. It learns where your swipes really start, end and turn for each key, and nudges new swipes to match before they're read, so your swipes get recognized better over time.
+
+**Set it up.** It's on by default (Swipe Typing → Adaptive swipe learning). **Strength** goes from Gentlest to Strongest and sets how quickly it trusts what it learned and how far it adjusts your swipes. You can see what it learned in the typing heatmap (the profiles marked "swipe"), and **Reset swipe learning** clears it without touching what it learned from your taps.
+
+**How it works.**
+- It learns from swipes you keep, and from swipes you fix (delete and swipe again, pick another suggestion, or go back and change the word).
+- A swipe only counts when the path really agrees with the final word. Every letter has to be visited in order (within about 1.4 keys), the start and end have to match, there can't be extra sharp turns, and the length has to be about right. So a botched swipe is never learned. Fingers often lift off a little past the last key when swiping fast, so the last letter is learned from the path's closest approach instead.
+- Swipe offsets are kept in their own profile, apart from your taps. New swipe paths are bent by at most 0.6 of a key before the recognizer reads them.
+- Only per-key positions are saved, never words or swipe paths, and nothing is learned in password or incognito fields.
+
+### The suggestion menu
+
+Long-press a word in the suggestion bar to see what you can do with it.
+
+- **Add to dictionary** puts it in your personal dictionary. If the word looks like a password or key, Pluto warns you first, since the personal dictionary can be read by other apps and keyboards.
+- **Forget** stops the keyboard from suggesting it again.
+
 ### Always use middle suggestion
 
 Like SwiftKey, space always picks the middle suggestion, even when the keyboard isn't sure. Words the keyboard doesn't know stay in the middle as you typed them. While it's on, the Autocorrect Threshold setting isn't used. It pairs well with [missed typo fixing](#smart-corrections-for-typing), which catches the typos this lets through.
@@ -227,6 +262,16 @@ Like SwiftKey, space always picks the middle suggestion, even when the keyboard 
 This is on by default, and typing punctuation like ! or ? corrects the word before it, just like space. When it's off, punctuation keeps the word exactly as you typed it, and symbols become part of the word. Space still corrects.
 
 ---
+
+## Your words and names
+
+Pluto uses the words you add and the names it learns in a few places (Smart corrections spells names your way, and typing fixes leave your own words alone). The Personal dictionary page (Text Prediction → Personal dictionary) has some tools for managing them.
+
+- **Copy learned words to dictionary** lists the names and other new words the keyboard learned from your typing, so you can add them to Android's personal dictionary in one go. Words already there are skipped.
+- Words that look like passwords or keys are listed separately under **Looks sensitive**, with a warning not to copy them.
+- For any learned word you can **Forget from keyboard** (so it's no longer suggested) or **Never suggest** it for copying. Words you hide end up in **Hidden words**, where **Show again** brings them back.
+
+Android's personal dictionary is shared with other apps and keyboards on the phone, so only copy what you're comfortable sharing.
 
 ## Privacy
 
@@ -239,6 +284,10 @@ This is on by default, and typing punctuation like ! or ? corrects the word befo
 
 Pluto Classic (the default), Gilded Horizon, Ember Ridge, Horizon and Frost sit alongside FUTO's themes. **Follow system light/dark mode** switches between a day theme and a night theme of your choice when your phone changes mode.
 
+## Backup and moving from FUTO Keyboard
+
+**Export configuration** and **Import configuration** (under Miscellaneous) save and restore your settings, learned words, personal dictionary and Pluto's own settings, like your typing pairs, phrase lists and emoji names. Coming from FUTO Keyboard? Export there and import in Pluto. Importing replaces Pluto's current settings, so do it first.
+
 ## Feature tips
 
 The first time you meet a feature, a short tip appears over the top of the keyboard. For example, you'll see one
@@ -250,6 +299,10 @@ The first time you meet a feature, a short tip appears over the top of the keybo
 - and the first time Smart corrections tidies a dictation.
 
 Tips only appear for features you have switched on, each only once. Tap **Got it** to close a tip, or **Turn off tips** to stop them all. Under Settings → Help you can switch tips back on (**Show feature tips**) or see them all again (**Show tips again**).
+
+## Help
+
+Settings → Help & Feedback has the feature tip switches, your version number, and links to report a problem or suggest a feature (on GitHub), to the project page, and to FUTO's guide for the features Pluto shares with FUTO Keyboard. Please report Pluto problems on GitHub rather than to FUTO.
 
 ## Getting the models
 

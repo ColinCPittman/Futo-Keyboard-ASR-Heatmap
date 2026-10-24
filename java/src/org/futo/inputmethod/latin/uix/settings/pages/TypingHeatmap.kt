@@ -37,6 +37,7 @@ import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.futo.inputmethod.latin.R
+import org.futo.inputmethod.latin.heatmap.AdaptiveSwipe
 import org.futo.inputmethod.latin.heatmap.KeyboardSchematic
 import org.futo.inputmethod.latin.heatmap.SchematicKey
 import org.futo.inputmethod.latin.heatmap.TypingHeatmap
@@ -70,7 +71,8 @@ private fun profileLabel(id: String): String {
         stringResource(R.string.typing_heatmap_portrait)
     }
     val split = if (parts.contains("split")) " (" + stringResource(R.string.typing_heatmap_split) + ")" else ""
-    return "${parts.firstOrNull() ?: id} · $orientation$split"
+    val swipe = if (AdaptiveSwipe.isSwipeProfile(id)) " · " + stringResource(R.string.typing_heatmap_swipe) else ""
+    return "${parts.firstOrNull() ?: id} · $orientation$split$swipe"
 }
 
 @Composable
@@ -191,7 +193,10 @@ fun TypingHeatmapScreen(navController: NavHostController = rememberNavController
             HeatmapCanvas(current, Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
 
             Text(
-                stringResource(R.string.typing_heatmap_total_taps, current.profile.totalSamples()),
+                stringResource(
+                    if (AdaptiveSwipe.isSwipeProfile(current.id)) R.string.typing_heatmap_total_swipe_points
+                    else R.string.typing_heatmap_total_taps,
+                    current.profile.totalSamples()),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )

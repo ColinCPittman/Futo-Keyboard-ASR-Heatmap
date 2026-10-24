@@ -119,6 +119,8 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
     public static final String PREF_ENABLE_ALT_PERIOD_KEY = "pref_enable_alt_period_key";
     public static final String PREF_USE_DICT_KEY_BOOSTING = "pref_use_dict_key_boosting";
     public static final String PREF_USE_TYPING_HEATMAP = "pref_use_typing_heatmap";
+    public static final String PREF_ADAPTIVE_SWIPE = "pref_adaptive_swipe";
+    public static final String PREF_ADAPTIVE_SWIPE_STRENGTH = "pref_adaptive_swipe_strength";
 
     private static final String PREF_LAST_USED_PERSONALIZATION_TOKEN =
             "pref_last_used_personalization_token";
