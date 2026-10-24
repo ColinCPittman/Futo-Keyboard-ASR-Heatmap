@@ -117,10 +117,13 @@ private fun FakeToast(modifier: Modifier, message: String?) {
 @Composable
 private fun BoxScope.BluetoothToggleIcon(device: MutableState<MicrophoneDeviceState>? = null) {
     FakeToast(modifier = Modifier.align(Alignment.BottomCenter).offset(y = (-16).dp),
+        // Pluto: no empty "()" when the device has no name
         message = if(device?.value?.bluetoothActive == true) {
-            stringResource(R.string.using_bluetooth_mic, device.value.deviceName)
+            device.value.deviceName.takeIf { it.isNotBlank() }?.let { stringResource(R.string.using_bluetooth_mic, it) }
+                ?: stringResource(R.string.using_bluetooth_mic_unnamed)
         } else if(device?.value?.bluetoothAvailable == true || device?.value?.bluetoothPreferredByUser == true) {
-            stringResource(R.string.using_built_in_mic, device.value.deviceName)
+            device.value.deviceName.takeIf { it.isNotBlank() }?.let { stringResource(R.string.using_built_in_mic, it) }
+                ?: stringResource(R.string.using_built_in_mic_unnamed)
         } else {
             null
         }

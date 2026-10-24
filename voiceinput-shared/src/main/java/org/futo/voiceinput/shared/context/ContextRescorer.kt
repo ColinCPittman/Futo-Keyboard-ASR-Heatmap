@@ -555,7 +555,7 @@ class ContextRescorer(
                 for (k in words.indices) {
                     for (n in 1..3) {
                         if (k + n > words.size || (1 until n).any { !plainGap(k + it) }) break
-                        // an exclamation is not part of a misheard name ("Oh darn" is not "Hawthorne")
+                        // an exclamation is not part of a misheard name ("Oh darn" is not "Hadorn")
                         if (TranscriptGuard.normWord(words[k + n - 1]) in INTERJECTIONS) break
                         val c = names.soundAlike(words.subList(k, k + n))
                         if (c.isEmpty()) continue

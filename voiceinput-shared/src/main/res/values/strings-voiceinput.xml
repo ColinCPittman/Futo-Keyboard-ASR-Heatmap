@@ -52,7 +52,10 @@
     <string name="using_bluetooth_mic">Using Bluetooth mic (%1$s)</string>
 
     <!-- Indicates that although bluetooth mic is preferred, the builtin one is being used instead -->
-    <string name="using_built_in_mic">Using Built-in mic (%1$s)</string>
+    <string name="using_built_in_mic">Using built-in mic (%1$s)</string>
+    <!-- Pluto: the same, when the device has no name to show -->
+    <string name="using_built_in_mic_unnamed">Using built-in mic</string>
+    <string name="using_bluetooth_mic_unnamed">Using Bluetooth mic</string>
 
     <!-- Occurs when the model is corrupted, or loading failed for some other unknown reason,
          usually the fix is to re-download the model and re-import it. For example this may happen

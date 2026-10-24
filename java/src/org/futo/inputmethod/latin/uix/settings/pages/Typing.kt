@@ -550,14 +550,9 @@ val LongPressMenu = UserSettingsMenu(
         },
 
         UserSetting(name = R.string.morekey_settings_backspace_hold_delete_words) {
-            val oldSetting = useSharedPrefsInt(
-                key = Settings.PREF_BACKSPACE_MODE,
-                default = Settings.BACKSPACE_MODE_CHARACTERS
-            )
-
             val setting = useSharedPrefsInt(
                 key = Settings.PREF_BACKSPACE_MODE_HOLD,
-                default = oldSetting.value
+                default = remember { Settings.getInstance().current.mBackspaceModeHold }
             )
 
             SettingToggleRaw(
@@ -572,7 +567,7 @@ val LongPressMenu = UserSettingsMenu(
         UserSetting(name = R.string.morekey_settings_backspace_swipe_to_delete) {
             val setting = useSharedPrefsInt(
                 key = Settings.PREF_BACKSPACE_MODE,
-                default = Settings.BACKSPACE_MODE_CHARACTERS
+                default = Settings.BACKSPACE_MODE_WORDS
             )
 
             val deleteModes = mapOf(
@@ -655,7 +650,7 @@ val LongPressMenu = UserSettingsMenu(
                 title = stringResource(R.string.morekey_settings_duration),
                 subtitle = stringResource(R.string.morekey_settings_duration_subtitle),
                 key = Settings.PREF_KEY_LONGPRESS_TIMEOUT,
-                default = 300,
+                default = 220,
                 range = 100.0f..700.0f,
                 hardRange = 25.0f..1200.0f,
                 transform = { it.roundToInt() },
@@ -698,7 +693,7 @@ val NumberRowSettingMenu = UserSettingsMenu(
         userSettingDecorationOnly {
             PrimarySettingToggleDataStoreItem(
                 stringResource(R.string.keyboard_settings_show_number_row),
-                useSharedPrefsBool(Settings.PREF_ENABLE_NUMBER_ROW, false)
+                useSharedPrefsBool(Settings.PREF_ENABLE_NUMBER_ROW, true)
             )
         },
 
@@ -707,11 +702,11 @@ val NumberRowSettingMenu = UserSettingsMenu(
             default = {false},
             key = Settings.PREF_USE_WESTERN_NUMERALS,
         ).copy(visibilityCheck = {
-            useSharedPrefsBool(Settings.PREF_ENABLE_NUMBER_ROW, false).value
+            useSharedPrefsBool(Settings.PREF_ENABLE_NUMBER_ROW, true).value
         }),
 
         UserSetting(name = R.string.keyboard_settings_number_row_style, visibilityCheck = {
-            useSharedPrefsBool(Settings.PREF_ENABLE_NUMBER_ROW, false).value
+            useSharedPrefsBool(Settings.PREF_ENABLE_NUMBER_ROW, true).value
         }) {
             val context = LocalContext.current
             val scheme = LocalKeyboardScheme.current
@@ -805,7 +800,7 @@ val KeyboardSettingsMenu = UserSettingsMenu(
             title = R.string.keyboard_settings_show_number_row,
             subtitle = R.string.keyboard_settings_show_number_row_subtitle,
             key = Settings.PREF_ENABLE_NUMBER_ROW,
-            default = {false},
+            default = {true},
             icon = { Text("123", style = Typography.Body.MediumMl, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
                 modifier = Modifier.clearAndSetSemantics{}) },
             submenu = NumberRowSettingMenu.navPath

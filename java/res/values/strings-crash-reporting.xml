@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="crashed_text_email">Pluto Keyboard has crashed! You can report the problem at github.com/ColinCPittman/Futo-Keyboard-ASR-Heatmap/issues</string>
+    <string name="crashed_text_email">Pluto Keyboard has crashed! You can report the problem at github.com/ColinCPittman/Pluto-Keyboard/issues</string>
     <string name="crashed_text">Pluto Keyboard has crashed! Please send a report to help us fix this.</string>
     <string name="crashed_title">Crash Reporter</string>
 

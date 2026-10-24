@@ -76,7 +76,7 @@ class PersonalNames(words: Collection<String>, private val isOrdinaryWord: ((Str
         if (isOrdinaryWord != null && ordinary.all { it }) return emptyList()
         val out = LinkedHashSet<String>()
         // words run together into a name need its main sound code ("see ya mara" ~ "Xiomara"), because the
-        // alternate codes and the silent leading "h" made "oh darn" sound like "Hawthorne"
+        // alternate codes and the silent leading "h" made "oh darn" sound like "Hadorn"
         val strict = if (span.size > 1) DoubleMetaphone.encode(joined.replace("'", "")).first else null
         for (c in TranscriptGuard.soundCodes(joined)) {
             if (c.length < (if (span.size == 1) MIN_CODE else 3)) continue

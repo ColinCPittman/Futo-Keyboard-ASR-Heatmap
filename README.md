@@ -1,6 +1,6 @@
 <img src="docs/assets/readme-banner.png" alt="Pluto Keyboard: offline typing and voice with smarter corrections" width="100%">
 
-<p align="center"><b><a href="https://github.com/ColinCPittman/Futo-Keyboard-ASR-Heatmap/releases/latest">Download the APK</a></b> &nbsp;·&nbsp; <a href="#install">Install with Obtainium</a> &nbsp;·&nbsp; Android 7+ &nbsp;·&nbsp; no internet permission &nbsp;·&nbsp; built on <a href="https://keyboard.futo.tech/">FUTO Keyboard</a></p>
+<p align="center"><b><a href="https://github.com/ColinCPittman/Pluto-Keyboard/releases/latest">Download the APK</a></b> &nbsp;·&nbsp; <a href="#install">Install with Obtainium</a> &nbsp;·&nbsp; Android 7+ &nbsp;·&nbsp; no internet permission &nbsp;·&nbsp; built on <a href="https://keyboard.futo.tech/">FUTO Keyboard</a></p>
 
 Pluto Keyboard is a private, offline keyboard for Android with voice typing that works without sending a single word to the cloud. It learns how you type, shows your words as you speak them, and tidies up the transcript afterwards. It is built on top of [FUTO Keyboard](https://keyboard.futo.tech/), and the app has no internet permission at all, so Android won't let it connect to the internet.
 
@@ -35,7 +35,7 @@ For a full guide to every feature, how it works and how to get the most out of i
 
 | | |
 |:-:|---|
-| **1** | **Get the app.** In [Obtainium](https://github.com/ImranR98/Obtainium), *Add App* → `https://github.com/ColinCPittman/Futo-Keyboard-ASR-Heatmap`. Or download the `.apk` from the [latest release](https://github.com/ColinCPittman/Futo-Keyboard-ASR-Heatmap/releases/latest). Android 7+, 64-bit. It installs next to FUTO Keyboard. |
+| **1** | **Get the app.** In [Obtainium](https://github.com/ImranR98/Obtainium), *Add App* → `https://github.com/ColinCPittman/Pluto-Keyboard`. Or download the `.apk` from the [latest release](https://github.com/ColinCPittman/Pluto-Keyboard/releases/latest). Android 7+, 64-bit. It installs next to FUTO Keyboard. |
 | **2** | **Switch keyboards.** Open Pluto and follow the setup. If you're coming from FUTO you can export your configuration there and import it here. |
 | **3** | **Add voice.** From the same release, download `pluto-voice-moonshine-small-en.zip`, plus `pluto-punctuation-en.zip` and `pluto-smart-corrections-en.zip` for the cleanup. Don't unzip them, just import them under the **Languages & Models** settings menu. [All models](docs/MODELS.md) The **Languages & Models** screen also links you to the download page for the models, if you would rather do it through the app.|
 
@@ -50,7 +50,7 @@ For a full guide to every feature, how it works and how to get the most out of i
 
 ## Report a problem or suggest a feature
 
-Pluto is a personal project that I built for myself and am sharing in case it's useful to others. I'm happy with it, but it hasn't been widely tested yet, so you may run into rough edges. If you find a bug or have an idea, please open an issue on GitHub at <https://github.com/ColinCPittman/Futo-Keyboard-ASR-Heatmap/issues>. I'll do my best to address it.
+Pluto is a personal project that I built for myself and am sharing in case it's useful to others. I'm happy with it, but it hasn't been widely tested yet, so you may run into rough edges. If you find a bug or have an idea, please open an issue on GitHub at <https://github.com/ColinCPittman/Pluto-Keyboard/issues>. I'll do my best to address it.
 
 The issue form will ask for the following, and it all helps a lot.
 
@@ -80,4 +80,4 @@ Pluto Keyboard is a modified version of [FUTO Keyboard](https://github.com/futo-
 
 ## Building from source
 
-If you would like to build Pluto yourself, see [docs/BUILDING.md](docs/BUILDING.md). To make your own voice, punctuation or Smart corrections model packages, see [docs/MODELS.md](docs/MODELS.md). What changed in each version is on the [releases page](https://github.com/ColinCPittman/Futo-Keyboard-ASR-Heatmap/releases).
+If you would like to build Pluto yourself, see [docs/BUILDING.md](docs/BUILDING.md). To make your own voice, punctuation or Smart corrections model packages, see [docs/MODELS.md](docs/MODELS.md). What changed in each version is on the [releases page](https://github.com/ColinCPittman/Pluto-Keyboard/releases).

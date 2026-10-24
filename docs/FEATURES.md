@@ -309,7 +309,7 @@ Settings → Help & Feedback has the feature tip switches, your version number, 
 
 ## Getting the models
 
-Pluto can't download anything by itself (that's the point of having no internet permission). Get model files from the [release page](https://github.com/ColinCPittman/Futo-Keyboard-ASR-Heatmap/releases/latest) in your browser and import them without unzipping (Voice Input → Set up voice typing, or Languages & Models → English). To build your own model packages, see [MODELS.md](MODELS.md). To build the app and the official packages, see [BUILDING.md](BUILDING.md).
+Pluto can't download anything by itself (that's the point of having no internet permission). Get model files from the [release page](https://github.com/ColinCPittman/Pluto-Keyboard/releases/latest) in your browser and import them without unzipping (Voice Input → Set up voice typing, or Languages & Models → English). To build your own model packages, see [MODELS.md](MODELS.md). To build the app and the official packages, see [BUILDING.md](BUILDING.md).
 
 ---
 

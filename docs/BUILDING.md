@@ -15,8 +15,8 @@ This page is for anyone who wants to build the app or the model packages themsel
 The repository uses submodules (keyboard layouts, themes, translations, native libraries and llama.cpp), so clone recursively.
 
 ```
-git clone --recursive https://github.com/ColinCPittman/Futo-Keyboard-ASR-Heatmap.git
-cd Futo-Keyboard-ASR-Heatmap
+git clone --recursive https://github.com/ColinCPittman/Pluto-Keyboard.git
+cd Pluto-Keyboard
 ```
 
 If you forgot `--recursive`, run this.
