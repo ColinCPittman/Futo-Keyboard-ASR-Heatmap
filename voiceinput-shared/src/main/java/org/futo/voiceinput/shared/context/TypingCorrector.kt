@@ -43,6 +43,8 @@ data class TypingCorrectionConfig(
     val missedMargin: Double = 3.0,
     /** A missed typo shorter than 5 letters needs this much more per missing letter. */
     val shortWordNeed: Double = 2.0,
+    /** A sentence with more missed-typo candidates than this gets none of them fixed. */
+    val maxMissedPerSentence: Int = 2,
 ) {
     /** This config with [margin] moved by the "Sensitivity" setting (see [SmartCorrectionSensitivity]). */
     fun withSensitivity(steps: Int): TypingCorrectionConfig {
@@ -121,6 +123,14 @@ class TypingCorrector(
         val cands = ArrayList<Cand>()
         val words = word.findAll(text, 0).filter { it.range.last < to }.toList()
         if (words.count { it.range.first >= from } < config.minWords) return Result(null, trace, emptyList())
+        // the words that may be missed typos (a sentence with many of them is probably another
+        // language, code or jargon, so it is left alone, which also keeps the check quick)
+        val typos = if (config.missedTypos && finished && lexicon != null) {
+            words.filter { m ->
+                m.range.first >= from && !skip(m.range.first) && missedTypoShape(text, m) && !confusions.isNever(m.value) &&
+                    unknown(m.range.first) && !lexicon.knows(m.value)
+            }.takeIf { it.size <= config.maxMissedPerSentence }?.toSet() ?: emptySet()
+        } else emptySet()
         for ((wi, m) in words.withIndex()) {
             if (m.range.first < from || skip(m.range.first)) continue
             if (!finished && words.size - 1 - wi < config.earlyWords) continue
@@ -130,8 +140,8 @@ class TypingCorrector(
                 cands.add(Cand(m, rep, scored.substring(0, s) + rep + scored.substring(s + m.value.length)))
             }
             // a word no dictionary knows, so the real words it may be a slip of (finished sentences only)
-            if (config.missedTypos && finished && lexicon != null && missedTypoShape(text, m) && !confusions.isNever(m.value) && unknown(m.range.first) && !lexicon.knows(m.value)) {
-                for ((c, cost) in KeyboardTypos.candidates(m.value, lexicon.lowercaseWords, config.maxTypoCost, config.maxTypoCandidates)) {
+            if (m in typos) {
+                for ((c, cost) in KeyboardTypos.candidates(m.value, lexicon!!.lowercaseWords, config.maxTypoCost, config.maxTypoCandidates)) {
                     val rep = matchCase(m.value, c)
                     cands.add(Cand(m, rep, scored.substring(0, s) + rep + scored.substring(s + m.value.length), cost))
                 }

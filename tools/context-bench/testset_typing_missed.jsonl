@@ -26,3 +26,5 @@
 {"id": "mtc10", "cat": "control", "input": "Ugh, my phone died again today.", "expected": "Ugh, my phone died again today."}
 {"id": "mtc11", "cat": "control", "input": "Hmm, I'm not sure about that one.", "expected": "Hmm, I'm not sure about that one."}
 {"id": "mtc12", "cat": "control", "input": "The Zorblax team shipped the update today.", "expected": "The Zorblax team shipped the update today."}
+{"id": "mtc13", "cat": "control", "input": "We set it up with kubectl, argocd and kustomize yesterday.", "expected": "We set it up with kubectl, argocd and kustomize yesterday."}
+{"id": "mtc14", "cat": "control", "input": "Mi abuela dijo que vendria manana temprano.", "expected": "Mi abuela dijo que vendria manana temprano."}

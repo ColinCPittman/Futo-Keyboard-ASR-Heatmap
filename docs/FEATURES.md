@@ -58,7 +58,7 @@ Tap the microphone to start. Tap again to finish, or tap **Cancel** to throw the
 
 **What it does.** After you stop speaking, adds periods, commas, question marks and capital letters. It never changes your words.
 
-**Set it up.** Import a punctuation model (Languages & Models → Punctuation Model), then turn on **Fix punctuation** in Voice Input settings. The English model (`pcs_en`, about 67 MB) restores punctuation, capitals and sentence breaks. The multilingual model (about 164 MB) adds punctuation in many languages, with simpler rule-based capitals. Whisper adds its own punctuation, so this step is skipped while Whisper is your voice model.
+**Set it up.** Import a punctuation model (Languages & Models → English → Punctuation Model), then turn on **Fix punctuation** in Voice Input settings. The English model (`pcs_en`, about 67 MB) restores punctuation, capitals and sentence breaks. The multilingual model (about 164 MB) adds punctuation in many languages, with simpler rule-based capitals. Whisper adds its own punctuation, so this step is skipped while Whisper is your voice model.
 
 **How it works.** Moonshine ends a sentence at every pause, so "We should. You know, leave early." is common raw output. The punctuation model reads the whole transcript at once and decides where sentences really end. When Smart corrections is on, a further check (the *sentence-break veto*) asks the language model whether each break the punctuation step added mid-utterance reads better joined. A clause starting with "who" or "which" is rejoined with a comma ("to Marcus. Who locked…" becomes "to Marcus, who locked…"), unless that sentence is a question.
 
@@ -82,7 +82,7 @@ Spells names and words from your personal dictionary the way you do ("Katelyn" �
 
 A spoken word, or a few words run together ("see ya mara" → "Xiomara"), must sound like the name. Several words must match the name's main pronunciation, and an exclamation is never part of a name, so "Oh darn" can't become a name that only loosely sounds like it.
 
-*Tip.* Add unusual names you dictate often to your personal dictionary (long-press a suggestion → Add to dictionary, or Settings → Copy learned words to dictionary).
+*Tip.* Add unusual names you dictate often to your personal dictionary (long-press a suggestion → Add to dictionary, or use Copy learned words to dictionary on the Personal dictionary page).
 
 #### Numbers, times and amounts
 
@@ -155,7 +155,7 @@ These are under Voice Input → **Advanced options**, and they apply when a Moon
 
 ### Saving dictations for tuning
 
-Voice Input → **Save dictations for tuning** keeps your last 200 dictations on the phone, each one as the voice model heard it, after punctuation, and after Smart corrections. It's for studying and improving voice typing on a computer. It saves what you say, so it's off by default. Nothing leaves your phone on its own, and turning it off deletes the saved dictations.
+**Save dictations for tuning** (in Developer Settings) keeps your last 200 dictations on the phone, each one as the voice model heard it, after punctuation, and after Smart corrections. It's for studying and improving voice typing on a computer. It saves what you say, so it's off by default. Nothing leaves your phone on its own, and turning it off deletes the saved dictations.
 
 ---
 
@@ -168,7 +168,7 @@ Voice Input → **Save dictations for tuning** keeps your last 200 dictations on
 - **Fix typos that are real words.** These are slips that spell another word, which a spell checker can't catch, like "salt an pepper" → "salt and pepper" or "an email form my boss" → "from". It uses the [typing corrections list](#the-typing-corrections-list).
 - **Attempt to fix missed typos.** These are misspelled words that got through anyway, for example because the typo was the middle suggestion and the space bar kept it. It works out the word you meant from the letters you typed *and* the sentence around them, like "ststy the game" → "start the game".
 
-**Set it up.** It uses the Smart corrections model (the same one as voice). Turn it on in Text prediction → Smart corrections for typing. English only.
+**Set it up.** It uses the Smart corrections model (the same one as voice). Turn it on in Text Prediction → Smart corrections for typing. English only.
 
 **Using fixes.**
 - Each fix shows up as a small button in the suggestion bar above the keyboard. Tap it to change the word back.
@@ -196,7 +196,7 @@ Voice Input → **Save dictations for tuning** keeps your last 200 dictations on
 
 ### The typing corrections list
 
-Text prediction → Smart corrections for typing → **Typing corrections list** shows which typed words can be fixed into which. A word is only fixed into one of its pairs, and only when the sentence makes it clear.
+Text Prediction → Smart corrections for typing → **Typing corrections list** shows which typed words can be fixed into which. A word is only fixed into one of its pairs, and only when the sentence makes it clear.
 
 - **Built-in pairs.** Real words one key off from other common words ("an"/"and", "or"/"of", "form"/"from"). Search a typed word to see its pairs and switch any off, or turn the whole built-in list off to use only yours.
 - **Your pairs.** A typed word and one or more words you meant ("teh" → "the", "pour" → "pout").
@@ -211,7 +211,7 @@ Select one word in any text field and an **Add correction** button appears in th
 
 **What it does.** It learns from the times you hit a neighbouring key by mistake and slowly shifts each key's tap area toward where you actually tap, so you can type faster without aiming so carefully.
 
-**Set it up.** It's on by default (Text prediction → Adaptive typing heatmap). Open it to see your heatmap, switch it off, or reset what it learned. Portrait and landscape are learned separately.
+**Set it up.** It's on by default (Text Prediction → Adaptive typing heatmap). Open it to see your heatmap, switch it off, or reset what it learned. Portrait and landscape are learned separately.
 
 **How it works.** The code is in `java/src/org/futo/inputmethod/latin/heatmap/`.
 - For every letter key, `HeatmapModel` keeps running statistics of where taps landed relative to the key (average offset and spread, in units of the key's size). It doesn't store any text. Statistics are blended with a prior, so a key with few samples barely moves, and old samples fade so the model keeps following how you type.
@@ -231,8 +231,8 @@ This is on by default, and typing punctuation like ! or ? corrects the word befo
 ## Privacy
 
 - **No internet permission.** Models are imported from files, and nothing is uploaded.
-- **Protect password-like words** (on by default). Words that look like passwords, keys or email addresses aren't learned. A "Looks like a password" notice lets you learn one anyway.
-- **Copy learned words to dictionary** adds names and other new words the keyboard learned to Android's personal dictionary, so Smart corrections and other apps can use them. Words that look sensitive are flagged and not copied. Android's personal dictionary can be read by other apps, so only copy what you're comfortable sharing. You can hide words from this list, or make the keyboard forget them.
+- **Protect password-like words** (on by default, in Text Prediction). Words that look like passwords, keys or email addresses aren't learned. A "Looks like a password" notice lets you learn one anyway.
+- **Copy learned words to dictionary** (on the Personal dictionary page) adds names and other new words the keyboard learned to Android's personal dictionary, so Smart corrections and other apps can use them. Words that look sensitive are flagged and not copied. Android's personal dictionary can be read by other apps, so only copy what you're comfortable sharing. You can hide words from this list, or make the keyboard forget them.
 - What Smart corrections for typing learns is kept as counts per change and context, never your text.
 
 ## Themes

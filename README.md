@@ -26,7 +26,9 @@ Smart corrections also works when you type. Once you finish a sentence, it rerea
 
 For a full guide to every feature, how it works and how to get the most out of it, see [docs/FEATURES.md](docs/FEATURES.md).
 
-<img src="docs/assets/readme-screens-2.png" alt="Smart corrections settings, voice commands, the list of typing fixes with mist to must highlighted, typing settings" width="100%">
+<img src="docs/assets/readme-screens-2.png" alt="Smart corrections settings, voice commands, the list of typing fixes with mist to must highlighted, typing settings with the two kinds of fixes" width="100%">
+
+<img src="docs/assets/readme-screens-3.png" alt="The Sensitivity dials, a missed typo fixed with its first-time tip, the Add correction button for a selected word, and the Add correction window" width="100%">
 
 
 ## Install

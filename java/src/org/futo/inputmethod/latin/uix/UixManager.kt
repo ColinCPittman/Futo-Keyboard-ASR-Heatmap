@@ -63,6 +63,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -81,7 +82,6 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.ComposeView
@@ -625,7 +625,10 @@ class UixManager(private val latinIME: LatinIME) {
     private var currentNotice: MutableState<ImportantNotice?> = mutableStateOf(null)
 
     /** Where the keys start below the bars, in the keyboard window (for the feature tip card). */
-    private val keysTop = mutableIntStateOf(0)
+    private val keysTop = mutableFloatStateOf(0f)
+
+    /** The top of the keyboard window's content, in window coordinates (keysTop is measured from it). */
+    private val windowTop = mutableFloatStateOf(0f)
 
     private var inlineStuffHiddenByTyping = mutableStateOf(false)
 
@@ -1300,7 +1303,7 @@ class UixManager(private val latinIME: LatinIME) {
             TutorialArrow()
 
             KeyboardWindowSelector { gap ->
-                Column {
+                Column(Modifier.onGloballyPositioned { windowTop.floatValue = it.positionInWindow().y }) {
                     Box(Modifier.onGloballyPositioned { floatingPreeditPosition.value = it })
                     // TODO: Refactor how we handle expandable suggestions here to not be a mess
                     val needToUseExpandableSuggestionUi =
@@ -1326,7 +1329,7 @@ class UixManager(private val latinIME: LatinIME) {
 
                     val kbHeight = remember { mutableIntStateOf(latinIME.size.value!!.height) }
                     val keyboardViewOffset = remember(needToUseExpandableSuggestionUi) { mutableIntStateOf(0) }
-                    Box(Modifier.onGloballyPositioned { keysTop.intValue = it.positionInParent().y.roundToInt() }.let {
+                    Box(Modifier.let {
                         if(needToUseExpandableSuggestionUi) {
                             it.height(
                                 with(LocalDensity.current) { kbHeight.intValue.toDp() }
@@ -1350,6 +1353,7 @@ class UixManager(private val latinIME: LatinIME) {
                             )
                         }
                         latinIME.LegacyKeyboardView(modifier = Modifier
+                            .onGloballyPositioned { keysTop.floatValue = it.positionInWindow().y }
                             .align(Alignment.BottomCenter)
                             .onSizeChanged {
                                 // TODO: Is there a better way?
@@ -1377,7 +1381,7 @@ class UixManager(private val latinIME: LatinIME) {
                 FeatureTipCard(
                     Modifier
                         .align(Alignment.TopCenter)
-                        .offset { IntOffset(0, keysTop.intValue + 4.dp.roundToPx()) }
+                        .offset { IntOffset(0, (keysTop.floatValue - windowTop.floatValue).roundToInt() + 4.dp.roundToPx()) }
                 )
             }
 

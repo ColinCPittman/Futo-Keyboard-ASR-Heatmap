@@ -304,6 +304,7 @@ class TypingCorrections(private val helper: IMEHelper, private val inputLogic: I
 
     fun onFinishInput() {
         running?.cancel()
+        selectionTip?.cancel()
         waiting = null
         // the fixes stay but the list of them goes
         TypingFixes.fixes.value = emptyList()
